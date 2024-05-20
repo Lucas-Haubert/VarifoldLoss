@@ -1,0 +1,4 @@
+name: flexforecast
+channels:
+  - defaults
+prefix: /gpfs/users/haubertl/.conda/envs/flexforecast
