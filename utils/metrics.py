@@ -15,23 +15,57 @@ def MAE(pred, true):
     return np.mean(np.abs(pred - true))
 
 
+def nMAE(pred, true):
+    pred_norm = (pred - np.mean(pred)) / np.std(pred)
+    true_norm = (true - np.mean(true)) / np.std(true)
+    return MAE(pred_norm, true_norm)
+
+
+def RMAE(pred, true):
+    return np.sqrt(MAE(pred, true))
+
+
+def nRMAE(pred, true):
+    return np.sqrt(nMAE(pred, true))
+
+
 def MSE(pred, true):
     return np.mean((pred - true) ** 2)
+
+
+def nMSE(pred, true):
+    pred_norm = (pred - np.mean(pred)) / np.std(pred)
+    true_norm = (true - np.mean(true)) / np.std(true)
+    return MSE(pred_norm, true_norm)
 
 
 def RMSE(pred, true):
     return np.sqrt(MSE(pred, true))
 
 
+def nRMSE(pred, true):
+    return np.sqrt(nMSE(pred, true))
+
+
 def MAPE(pred, true):
-    return np.mean(np.abs((pred - true) / true))
+    return 100 * np.mean(np.abs((pred - true) / true))
+
+
+def SMAPE(pred, true):
+    return 100 * np.mean(2 * np.abs(pred - true) / (np.abs(pred) + np.abs(true)))
 
 
 def MSPE(pred, true):
     return np.mean(np.square((pred - true) / true))
 
 
+def MASE(pred, true):
+    d = np.mean(np.abs(np.diff(true, n=1)))
+    return MSE(pred, true) / d
+
+
 def metric(pred, true):
+
     mae = MAE(pred, true)
     mse = MSE(pred, true)
     rmse = RMSE(pred, true)
