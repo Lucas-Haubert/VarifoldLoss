@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 data_dict = {
     'Solar': Dataset_txt,
     'PEMS': Dataset_npz,
-    'csv': Dataset_csv,
+    'custom': Dataset_csv,
 }
 
 

@@ -22,7 +22,7 @@ python -u run.py \
   --data_path ETTh1.csv \
   --model_id ETTh1_96_96 \
   --model $model_name \
-  --data ETTh1 \
+  --data custom \
   --features M \
   --seq_len 96 \
   --pred_len 96 \
