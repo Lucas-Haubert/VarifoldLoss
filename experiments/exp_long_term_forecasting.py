@@ -186,6 +186,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return self.model
 
     def test(self, setting, test=0):
+        print('Beginning the test')
         test_data, test_loader = self._get_data(flag='test')
         if test:
             print('loading model')
@@ -253,17 +254,18 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         preds = np.array(preds)
         trues = np.array(trues)
-        print('test shape:', preds.shape, trues.shape)
+        print('preds and trues shapes:', preds.shape, trues.shape)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        print('test shape passed through the metric function:', preds.shape, trues.shape)
+        print('preds and trues shapes passed through the metric function:', preds.shape, trues.shape)
 
         # result save
         folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
+        results = metric(preds, trues)
+        mae, mse = results['MAE'], results['MSE']
         print('mse:{}, mae:{}'.format(mse, mae))
         f = open("result_long_term_forecast.txt", 'a')
         f.write(setting + "  \n")
@@ -272,7 +274,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         f.write('\n')
         f.close()
 
-        np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+        np.save(folder_path + 'metrics.npy', np.array(list(results.values())))
         np.save(folder_path + 'pred.npy', preds)
         np.save(folder_path + 'true.npy', trues)
 
