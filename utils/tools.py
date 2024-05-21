@@ -291,3 +291,4 @@ def transpose_dataframe(df):
 
 frequencies_dict = {
     'hourly': 'h'
+}

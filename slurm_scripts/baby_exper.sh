@@ -19,10 +19,10 @@ model_name=iTransformer
 python -u run.py \
   --is_training 1 \
   --root_path ./data/ETT-small/ \
-  --data_path ETTh1.csv \
+  --data_path ETTh1.tsf \
   --model_id ETTh1_96_96 \
   --model $model_name \
-  --data custom \
+  --data tsf \
   --features M \
   --seq_len 96 \
   --pred_len 96 \

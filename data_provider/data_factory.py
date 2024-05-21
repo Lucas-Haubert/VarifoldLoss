@@ -1,11 +1,11 @@
-from data_provider.data_loader import Dataset_Custom, Dataset_Solar, Dataset_PEMS, \
-    Dataset_Pred
+from data_provider.data_loader import Dataset_csv, Dataset_tsf, Dataset_txt, Dataset_npz, Dataset_Pred
 from torch.utils.data import DataLoader
 
 data_dict = {
     'Solar': Dataset_txt,
     'PEMS': Dataset_npz,
     'custom': Dataset_csv,
+    'tsf': Dataset_tsf,
 }
 
 

@@ -130,14 +130,14 @@ class Dataset_tsf(Dataset):
         self.scaler = StandardScaler()
     
         intermediate_df, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe(os.path.join(self.root_path, self.data_path))
-            if self.freq is None:
-                self.freq = frequencies_dict[frequency]
+        if self.freq is None:
+            self.freq = frequencies_dict[frequency]
+        
+        if contain_equal_length == False:
+            if self.features == 'M' or self.features == 'MS':
+                raise ValueError('Cannot adopt a multivariate analysis with non-equal length signals')
             
-            if contain_equal_length == False:
-                if self.features == 'M' or self.features == 'MS':
-                    raise ValueError('Cannot adopt a multivariate analysis with non-equal length signals')
-                
-            df_raw = transpose_dataframe(intermediate_df)
+        df_raw = transpose_dataframe(intermediate_df)
 
         if self.features == 'MS' or self.features == 'S':
             cols = list(df_raw.columns)
@@ -355,7 +355,7 @@ class Dataset_Pred(Dataset):
         self.seq_len = size[0]
         self.label_len = size[1]
         self.pred_len = size[2]
-        
+
         self.features = features
         self.target = target
         self.scale = scale
