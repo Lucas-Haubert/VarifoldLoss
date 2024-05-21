@@ -3,9 +3,9 @@ from data_provider.data_loader import Dataset_Custom, Dataset_Solar, Dataset_PEM
 from torch.utils.data import DataLoader
 
 data_dict = {
-    'Solar': Dataset_Solar,
-    'PEMS': Dataset_PEMS,
-    'custom': Dataset_Custom,
+    'Solar': Dataset_txt,
+    'PEMS': Dataset_npz,
+    'csv': Dataset_csv,
 }
 
 
