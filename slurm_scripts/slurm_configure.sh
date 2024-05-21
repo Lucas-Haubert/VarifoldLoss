@@ -23,5 +23,5 @@ conda env create -f slurm_scripts/config/environment_flexforecast.yml --force
 source activate flexforecast
 
 # Check whether the environment is activated
-echo 'Check which environment is activated'
+echo 'Check if the environment is active'
 conda env list
