@@ -5,3 +5,4 @@ matplotlib==3.7.0
 torch==2.0.0
 reformer-pytorch==1.4.4
 tslearn==0.6.3
+numba==0.53.1
