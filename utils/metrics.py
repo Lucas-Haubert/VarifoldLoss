@@ -1,5 +1,8 @@
 import numpy as np
 
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+
 
 def RSE(pred, true):
     return np.sqrt(np.sum((true - pred) ** 2)) / np.sqrt(np.sum((true - true.mean()) ** 2))
@@ -71,51 +74,17 @@ def MASE(pred, true):
     return np.mean(mae / naive_forecast)
 
 
-def euclidean_distance(a, b):
-    return np.sqrt((a - b) ** 2)
+def DTW(pred, true):
+    N, H, C = pred.shape
+    total_dtw_distance = 0
 
+    for i in range(N):
+        pred_sequence = pred[i]
+        true_sequence = true[i] 
+        distance, _ = fastdtw(pred_sequence, true_sequence, dist=euclidean)
+        total_dtw_distance += distance
 
-def dtw_1d(series1, series2):
-    n = len(series1)
-    m = len(series2)
-    dtw_matrix = np.zeros((n + 1, m + 1))
-
-    for i in range(1, n + 1):
-        dtw_matrix[i, 0] = float('inf')
-    for j in range(1, m + 1):
-        dtw_matrix[0, j] = float('inf')
-    dtw_matrix[0, 0] = 0
-
-    for i in range(1, n + 1):
-        for j in range(1, m + 1):
-            cost = euclidean_distance(series1[i - 1], series2[j - 1])
-            dtw_matrix[i, j] = cost + min(dtw_matrix[i - 1, j],    
-                                          dtw_matrix[i, j - 1],    
-                                          dtw_matrix[i - 1, j - 1])  
-
-    return dtw_matrix[n, m]
-
-
-def DTW(pred, true): 
-
-    N_star, H, C_in = pred.shape
-    dtw_per_sequence = []
-    
-    for i in range(N_star):
-
-        dtw_per_channel = []
-        for j in range(C_in):
-
-            series_pred = pred[i, :, j]
-            series_true = true[i, :, j]
-            dtw_distance = dtw_1d(series_pred, series_true)
-            dtw_per_channel.append(dtw_distance)
-        
-        dtw_per_sequence.append(np.mean(dtw_per_channel))
-    
-    dtw_final = np.mean(dtw_per_sequence)
-    
-    return dtw_final
+    return total_dtw_distance / N
 
 
 def nDTW(pred, true):
@@ -140,7 +109,7 @@ def metric(pred, true):
         'nRMAE': nRMAE(pred, true),
         'nRMSE': nRMSE(pred, true),
         'MASE': MASE(pred, true),
-        'DTW': DTW(pred, true),
+        'DTW': DTW(pred, true), 
         'nDTW': nDTW(pred, true)
     }
     return metrics
