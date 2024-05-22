@@ -22,6 +22,7 @@ python -u run.py \
   --data_path ETTh1.tsf \
   --model_id ETTh1_96_96 \
   --model $model_name \
+  --loss 'MSE' \
   --data tsf \
   --features M \
   --seq_len 96 \

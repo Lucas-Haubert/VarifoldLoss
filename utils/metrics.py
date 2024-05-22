@@ -1,7 +1,5 @@
 import numpy as np
-
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean
+from tslearn.metrics import dtw
 
 
 def RSE(pred, true):
@@ -81,16 +79,16 @@ def DTW(pred, true):
     for i in range(N):
         pred_sequence = pred[i]
         true_sequence = true[i] 
-        distance, _ = fastdtw(pred_sequence, true_sequence, dist=euclidean)
+        distance = dtw(pred_sequence, true_sequence)
         total_dtw_distance += distance
 
-    return total_dtw_distance / N
+    return total_dtw_distance / N   
 
 
 def nDTW(pred, true):
     pred_normalized = normalize(pred)
     true_normalized = normalize(true)
-    return DTW(pred_normalized, true_normalized)
+    return newDTW(pred_normalized, true_normalized)
 
 
 def metric(pred, true):
