@@ -45,55 +45,63 @@ def DILATE_multi_dim_naive(outputs, targets, alpha, gamma, device):
 
 import time
 
-outputs = torch.randn(2, 10, 3)
-targets = torch.randn(2, 10, 3)
+duration_over_iter_dilate_loss=0
+duration_over_iter_naive=0
 
-print("outputs:")
-print(outputs)
+value_over_iter_dilate_loss=0
+value_over_iter_naive=0
 
-print("\ntargets")
-print(targets)
+print("===============================================================================================")
+print("Iteration")
+print("===============================================================================================")
 
+for k in range(10):
 
-alpha = 0.5
-gamma = 0.5
+	outputs = torch.randn(2, 10, 3)
+	targets = torch.randn(2, 10, 3)
 
+	alpha = 0.5
+	gamma = 0.5
 
-print("\nDILATE_multi_dim_naive(outputs, targets) with alpha =", alpha, " and gamma =", gamma)
-start_time_naive = time.time()
-loss_naive = DILATE_multi_dim_naive(outputs, targets, alpha, gamma, device)
-end_time_naive = time.time()
-duration_naive = end_time_naive - start_time_naive
-print("Loss naive:", loss_naive)
-print("Duration naive:", duration_naive, "seconds")
+	print("device:")
+	print(device)
 
-print("\ndilate_loss(outputs, targets) with alpha =", alpha, " and gamma =", gamma)
-start_time_dilate_loss = time.time()
-loss_dilate_loss = dilate_loss(outputs, targets, alpha, gamma, device)
-end_time_dilate_loss = time.time()
-duration_dilate_loss = end_time_dilate_loss - start_time_dilate_loss
-print("Loss dilate original:", loss_dilate_loss)
-print("Duration dilate original:", duration_dilate_loss, "seconds")
+	print("\nDILATE_multi_dim_naive(outputs, targets) with alpha =", alpha, "and gamma =", gamma)
+	start_time_naive = time.time()
+	loss_naive = DILATE_multi_dim_naive(outputs, targets, alpha, gamma, device)
+	end_time_naive = time.time()
+	value_over_iter_naive += loss_naive
+	duration_naive = end_time_naive - start_time_naive
+	if k != 0:
+		duration_over_iter_naive += duration_naive
+	print("Loss dilate naive for run", k, ":", loss_naive)
+	print("Duration dilate naive for run", k, ":", duration_naive, "seconds")
 
+	print("===============================================================================================")
 
+	print("\ndilate_loss(outputs, targets) with alpha =", alpha, "and gamma =", gamma)
+	start_time_dilate_loss = time.time()
+	loss_dilate_loss, _, _ = dilate_loss(outputs, targets, alpha, gamma, device)
+	end_time_dilate_loss = time.time()
+	value_over_iter_dilate_loss += loss_dilate_loss
+	duration_dilate_loss = end_time_dilate_loss - start_time_dilate_loss
+	if k != 0:
+		duration_over_iter_dilate_loss += duration_dilate_loss
+	print("Loss dilate multivariate for run", k, ":", loss_dilate_loss)
+	print("Duration dilate multivariate for run", k, ":", duration_dilate_loss, "seconds")
 
-"""
-print("Pairwise matrix on multivariate time series")
-batch_size, N_output = outputs.shape[0:2]
-D = torch.zeros((batch_size, N_output, N_output)).to(device)
-for k in range(batch_size):
-	Dk = soft_dtw.pairwise_distances(outputs[k,:,:],targets[k,:,:])
-	D[k:k+1,:,:] = Dk  
-print(D)   
-softdtw_batch = soft_dtw.SoftDTWBatch.apply
-print("Loss shape")
-loss_shape = softdtw_batch(D,gamma)
-print(loss_shape)"""
+	print("===============================================================================================")
+	print("Iteration")
+	print("===============================================================================================")
 
+average_duration_naive = duration_over_iter_naive / 9
+average_duration_dilate_loss = duration_over_iter_dilate_loss / 9
 
-"""
-print("\ndilate_loss(outputs, targets, alpha, gamma, device) with alpha =", alpha, " and gamma =", gamma)
-loss, loss_shape, loss_temporal = dilate_loss(pred_channel, true_channel, alpha, gamma, device)
-print(loss.item())
-"""
+average_value_naive = value_over_iter_naive / 10
+average_value_dilate_loss = value_over_iter_dilate_loss / 10
 
+print("\Average computing time for naive method:", average_duration_naive)
+print("\Average computing time for dilate_loss:", average_duration_dilate_loss)
+
+print("\Average loss value for naive method:", average_value_naive)
+print("\Average loss value for dilate_loss:", average_value_dilate_loss)

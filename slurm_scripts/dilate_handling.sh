@@ -4,7 +4,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpu_test
+#SBATCH --partition=gpu
 
 # Module load
 module load anaconda3/2021.05/gcc-9.2.0
