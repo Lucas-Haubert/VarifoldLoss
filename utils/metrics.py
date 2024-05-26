@@ -88,7 +88,7 @@ def DTW(pred, true):
 def nDTW(pred, true):
     pred_normalized = normalize(pred)
     true_normalized = normalize(true)
-    return newDTW(pred_normalized, true_normalized)
+    return DTW(pred_normalized, true_normalized)
 
 
 def metric(pred, true):

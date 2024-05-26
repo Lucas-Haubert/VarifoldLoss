@@ -10,6 +10,8 @@ import time
 import warnings
 import numpy as np
 
+from loss.dilate.dilate_loss import DILATE, DILATE_independent
+
 warnings.filterwarnings('ignore')
 
 
@@ -37,6 +39,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             criterion = nn.MSELoss()
         elif self.args.loss == 'MAE':
             criterion = nn.L1Loss()
+        elif self.args.loss == 'DILATE':
+            criterion = DILATE
+        elif self.args.loss == 'DILATE_independent':
+            criterion = DILATE_independent
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
