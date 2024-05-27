@@ -32,6 +32,6 @@ If you have any questions or want to use the code, feel free to contact:
 
 ## Acknowledgements
 
-I would like to acknowledge Professor [Laurent Oudre](http://www.laurentoudre.fr/) for being my tutor during my research internship at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
+I would like to acknowledge [Laurent Oudre](http://www.laurentoudre.fr/) for being my tutor during my research internship at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
 
 I also thank my two supervisors [Chrysoula Kosma](https://www.linkedin.com/in/chrykosma/) and [Thibaut Germain](https://www.linkedin.com/in/thibaut-germain/) for helping me a lot during this period.
