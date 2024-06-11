@@ -9,6 +9,7 @@ import os
 import time
 import warnings
 import numpy as np
+import matplotlib.pyplot as plt
 
 from loss.dilate.dilate_loss import DILATE, DILATE_independent
 
@@ -18,6 +19,9 @@ warnings.filterwarnings('ignore')
 class Exp_Long_Term_Forecast(Exp_Basic):
     def __init__(self, args):
         super(Exp_Long_Term_Forecast, self).__init__(args)
+        self.train_losses = []
+        self.vali_losses = []
+        self.test_losses = []
 
     def _build_model(self):
         model = self.model_dict[self.args.model].Model(self.args).float()
@@ -89,6 +93,20 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         self.model.train()
         return total_loss
 
+    def plot_train_loss(self, setting):
+        folder_path = './outputs/loss_wrt_epochs/' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='.', color='blue', label='Training Loss')
+        plt.plot(range(1, len(self.vali_losses) + 1), self.vali_losses, marker='.', color='red', label='Validation Loss')
+        plt.plot(range(1, len(self.test_losses) + 1), self.test_losses, marker='.', color='green', label='Test Loss')
+        plt.title(f"Model: {self.args.model}, Loss: {self.args.loss}, Observation Window: {self.args.seq_len}, Prediction Length: {self.args.pred_len}, Dataset: {self.args.data_path}")
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.savefig(os.path.join(folder_path, f"losses_epochs_{setting}.png"))
+
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
@@ -105,8 +123,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
-
-        print("Selected loss:", self.args.loss)
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -179,6 +195,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
+            self.train_losses.append(train_loss)
+            self.vali_losses.append(vali_loss)
+            self.test_losses.append(test_loss)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -194,6 +213,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
+        self.plot_train_loss(setting)
+
         return self.model
 
     def test(self, setting, test=0):
@@ -201,11 +222,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
         if test:
             print('loading model')
-            self.model.load_state_dict(torch.load(os.path.join('./checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
         preds = []
         trues = []
-        folder_path = './test_results/' + setting + '/'
+        folder_path = './outputs/visual_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -254,14 +275,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 preds.append(pred)
                 trues.append(true)
-                if i % 20 == 0:
+                if i in [0, 19, 39]:
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
                         shape = input.shape
                         input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
                     gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
                     pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
-                    visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, :, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, Observation Window: {self.args.seq_len}, Prediction Length: {self.args.pred_len}, Dataset: {self.args.data_path}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, str(i) + '.png'))
+                    plt.close()
+                    
 
         preds = np.array(preds)
         trues = np.array(trues)
@@ -271,19 +304,20 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         print('preds and trues shapes passed through the metric function:', preds.shape, trues.shape)
 
         # result save
-        folder_path = './results/' + setting + '/'
+        folder_path = './outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         results = metric(preds, trues)
-        mae, mse, dtw, ndtw = results['MAE'], results['MSE'], results['DTW'], results['nDTW']
-        print('mse:{}, mae:{}, dtw:{}, ndtw:{}'.format(mse, mae, dtw, ndtw))
-        f = open("result_long_term_forecast.txt", 'a')
-        f.write(setting + "  \n")
-        f.write('mse:{}, mae:{}'.format(mse, mae))
-        f.write('\n')
-        f.write('\n')
-        f.close()
+        mse, mae, dtw = results['MSE'], results['MAE'], results['DTW']
+        print('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
+
+        file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
+        with open(file_path, 'a') as f:
+            f.write(setting + "  \n")
+            f.write('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
+            f.write('\n')
+            f.write('\n')
 
         np.save(folder_path + 'metrics.npy', np.array(list(results.values())))
         np.save(folder_path + 'pred.npy', preds)
@@ -335,7 +369,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
         # result save
-        folder_path = './results/' + setting + '/'
+        folder_path = './outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 

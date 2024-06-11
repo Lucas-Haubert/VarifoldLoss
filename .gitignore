@@ -130,11 +130,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
-
-# Lucas contribution (ask to supervisors)
-checkpoints/
-data/
-test_results/
-results/
-unit_tests/
+# Management of the folders
+dataset/
+outputs/

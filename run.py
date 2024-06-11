@@ -4,6 +4,7 @@ from experiments.exp_long_term_forecasting import Exp_Long_Term_Forecast
 from experiments.exp_long_term_forecasting_partial import Exp_Long_Term_Forecast_Partial
 import random
 import numpy as np
+import time
 
 if __name__ == '__main__':
     fix_seed = 2023
@@ -21,14 +22,14 @@ if __name__ == '__main__':
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='custom', help='dataset type')
-    parser.add_argument('--root_path', type=str, default='./data/electricity/', help='root path of the data file')
+    parser.add_argument('--root_path', type=str, default='./dataset/electricity/', help='root path of the data file')
     parser.add_argument('--data_path', type=str, default='electricity.csv', help='data csv file')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
     parser.add_argument('--freq', type=str, default='h',
                         help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-    parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
+    parser.add_argument('--checkpoints', type=str, default='./outputs/checkpoints/', help='location of model checkpoints')
 
     # forecasting task
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
-    parser.add_argument('--train_epochs', type=int, default=1, help='train epochs')
+    parser.add_argument('--train_epochs', type=int, default=3, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--channel_independence', type=bool, default=False, help='whether to use channel_independence mechanism')
     parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
     parser.add_argument('--class_strategy', type=str, default='projection', help='projection/average/cls_token')
-    parser.add_argument('--target_root_path', type=str, default='./data/electricity/', help='root path of the data file')
+    parser.add_argument('--target_root_path', type=str, default='./dataset/electricity/', help='root path of the data file')
     parser.add_argument('--target_data_path', type=str, default='electricity.csv', help='data file')
     parser.add_argument('--efficient_training', type=bool, default=False, help='whether to use efficient_training (exp_name should be partial train)') # See Figure 8 of our paper for the detail
     parser.add_argument('--use_norm', type=int, default=True, help='use norm and denorm')
@@ -128,12 +129,18 @@ if __name__ == '__main__':
                 args.des,
                 args.class_strategy, ii)
 
-            exp = Exp(args)  # set experiments
+            exp = Exp(args)
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            start_training = time.time()
             exp.train(setting)
+            end_training = time.time()
+            print("Training with {} epochs: {} seconds".format(args.train_epochs, end_training - start_training))
 
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.test(setting)
+            start_testing = time.time()
+            exp.test(setting, test=1)
+            end_testing = time.time()
+            print("Testing: {} seconds".format(end_testing - start_testing))
 
             if args.do_predict:
                 print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))

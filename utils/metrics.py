@@ -2,30 +2,20 @@ import numpy as np
 from tslearn.metrics import dtw
 
 
-def RSE(pred, true):
-    return np.sqrt(np.sum((true - pred) ** 2)) / np.sqrt(np.sum((true - true.mean()) ** 2))
-
-
-def CORR(pred, true):
-    u = ((true - true.mean(0)) * (pred - pred.mean(0))).sum(0)
-    d = np.sqrt(((true - true.mean(0)) ** 2 * (pred - pred.mean(0)) ** 2).sum(0))
-    return (u / d).mean(-1) 
+def MSE(pred, true):
+    return np.mean((pred - true) ** 2)
 
 
 def MAE(pred, true):
     return np.mean(np.abs(pred - true))
 
 
-def RMAE(pred, true):
-    return np.sqrt(MAE(pred, true))
-
-
-def MSE(pred, true):
-    return np.mean((pred - true) ** 2)
-
-
 def RMSE(pred, true):
     return np.sqrt(MSE(pred, true))
+
+
+def RMAE(pred, true):
+    return np.sqrt(MAE(pred, true))
 
 
 def MAPE(pred, true):
@@ -40,30 +30,14 @@ def MSPE(pred, true):
     return np.mean(np.square((pred - true) / true))
 
 
-def normalize(array):
-    mean = np.mean(array, axis=1, keepdims=True)
-    std = np.std(array, axis=1, keepdims=True)
-    return (array - mean) / std
+def RSE(pred, true):
+    return np.sqrt(np.sum((true - pred) ** 2)) / np.sqrt(np.sum((true - true.mean()) ** 2))
 
 
-def nMAE(pred, true):
-    pred_normalized = normalize(pred)
-    true_normalized = normalize(true)
-    return MAE(pred_normalized, true_normalized)
-
-
-def nMSE(pred, true):
-    pred_normalized = normalize(pred)
-    true_normalized = normalize(true)
-    return MSE(pred_normalized, true_normalized)
-
-
-def nRMAE(pred, true):
-    return np.sqrt(nMAE(pred, true))
-
-
-def nRMSE(pred, true):
-    return np.sqrt(nMSE(pred, true))
+def CORR(pred, true):
+    u = ((true - true.mean(0)) * (pred - pred.mean(0))).sum(0)
+    d = np.sqrt(((true - true.mean(0)) ** 2 * (pred - pred.mean(0)) ** 2).sum(0))
+    return (u / d).mean(-1) 
 
 
 def MASE(pred, true):
@@ -85,29 +59,28 @@ def DTW(pred, true):
     return total_dtw_distance / N   
 
 
-def nDTW(pred, true):
-    pred_normalized = normalize(pred)
-    true_normalized = normalize(true)
-    return DTW(pred_normalized, true_normalized)
+# Apply this function to pred and true before passing them into one of the metrics below
+# This approach normalizes each sequence based on their proper statistics, while sk-learn scaler
+# normalizes relatively to the train dataset
+# => Different approach => Use later if needed
+def normalize(array):
+    mean = np.mean(array, axis=1, keepdims=True)
+    std = np.std(array, axis=1, keepdims=True)
+    return (array - mean) / std
 
 
 def metric(pred, true):
     metrics = {
-        'RSE': RSE(pred, true),
-        'CORR': CORR(pred, true),
-        'MAE': MAE(pred, true),
-        'RMAE': RMAE(pred, true),
         'MSE': MSE(pred, true),
+        'MAE': MAE(pred, true),
         'RMSE': RMSE(pred, true),
+        'RMAE': RMAE(pred, true),
         'MAPE': MAPE(pred, true),
         'SMAPE': SMAPE(pred, true),
         'MSPE': MSPE(pred, true),
-        'nMAE': nMAE(pred, true),
-        'nMSE': nMSE(pred, true),
-        'nRMAE': nRMAE(pred, true),
-        'nRMSE': nRMSE(pred, true),
+        'RSE': RSE(pred, true),
+        'CORR': CORR(pred, true),
         'MASE': MASE(pred, true),
-        'DTW': DTW(pred, true), 
-        'nDTW': nDTW(pred, true)
+        'DTW': DTW(pred, true),
     }
     return metrics
