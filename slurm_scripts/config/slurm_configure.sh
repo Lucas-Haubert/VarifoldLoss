@@ -4,7 +4,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpu
+#SBATCH --partition=gpu_test
 
 # Setup conda env - ensure the .conda dir is located on my workir, and move it if not
 [ -L ~/.conda ] && unlink ~/.conda

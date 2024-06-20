@@ -1,5 +1,11 @@
 import numpy as np
-from tslearn.metrics import dtw
+import torch
+
+from tslearn.metrics import dtw, dtw_path
+
+from loss.dilate.dilate_loss import DILATE
+from loss.tildeq import tildeq_loss
+
 
 
 def MSE(pred, true):
@@ -59,17 +65,65 @@ def DTW(pred, true):
     return total_dtw_distance / N   
 
 
-# Apply this function to pred and true before passing them into one of the metrics below
-# This approach normalizes each sequence based on their proper statistics, while sk-learn scaler
-# normalizes relatively to the train dataset
-# => Different approach => Use later if needed
-def normalize(array):
-    mean = np.mean(array, axis=1, keepdims=True)
-    std = np.std(array, axis=1, keepdims=True)
-    return (array - mean) / std
+def TDI(pred, true):
+    N, H, C = pred.shape
+    total_tdi_distance = 0
+
+    for i in range(N):
+        pred_sequence = pred[i]
+        true_sequence = true[i] 
+        path, _ = dtw_path(pred_sequence, true_sequence)
+        tdi_distance = sum(abs(i-j) for (i, j) in path)
+        total_tdi_distance += tdi_distance
+
+    return total_tdi_distance / N
 
 
-def metric(pred, true):
+def DILATE_metric(pred, true, alpha):
+
+    pred = torch.from_numpy(pred).cpu()
+    true = torch.from_numpy(true).cpu()
+
+    dilate = DILATE(pred, true, alpha=alpha)
+
+    return dilate
+
+
+def DILATE_05(pred, true):
+    return DILATE_metric(pred, true, alpha=0.5)
+
+
+def softDTW(pred, true):
+    return DILATE_metric(pred, true, alpha=1)
+
+
+def softTDI(pred, true):
+    return DILATE_metric(pred, true, alpha=0)
+
+
+def TILDEQ_metric(pred, true, alpha):
+
+    pred = torch.from_numpy(pred).cpu()
+    true = torch.from_numpy(true).cpu()
+
+    tildeq = tildeq_loss(pred, true, alpha=alpha)
+
+    return tildeq
+
+
+def TILDEQ_05(pred, true):
+    return TILDEQ_metric(pred, true, alpha=0.5)
+
+
+def TILDEQ_1(pred, true):
+    return TILDEQ_metric(pred, true, alpha=1)
+
+
+def TILDEQ_00(pred, true):
+    return TILDEQ_metric(pred, true, alpha=0)
+
+
+def compute_metrics(pred, true):
     metrics = {
         'MSE': MSE(pred, true),
         'MAE': MAE(pred, true),
@@ -82,5 +136,12 @@ def metric(pred, true):
         'CORR': CORR(pred, true),
         'MASE': MASE(pred, true),
         'DTW': DTW(pred, true),
+        'TDI': TDI(pred, true),
+        'DILATE_05': DILATE_05(pred, true),
+        'softDTW': softDTW(pred, true),
+        'softTDI': softTDI(pred, true),
+        'TILDEQ_05': TILDEQ_05(pred, true),
+        'TILDEQ_1': TILDEQ_1(pred, true),
+        'TILDEQ_00': TILDEQ_00(pred, true)
     }
     return metrics

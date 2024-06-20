@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=itransformer
-#SBATCH --output=%x.o%j
+#SBATCH --job-name=babyexpiTransformer
+#SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=01:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 
@@ -16,14 +16,15 @@ source activate flexforecast
 # Choose the model
 model_name=iTransformer
 
-# iTransformer - ETTh1 - MSE
+# Transformer - ETTh1 - MSE
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/ETT-small/ \
 #   --data_path ETTh1.csv \
-#   --model_id iTransformer_ETTh1_MSE_96_96 \
+#   --model_id Transformer_ETTh1_MSE_96_96 \
 #   --model $model_name \
 #   --loss 'MSE' \
+#   --train_epochs 10 \
 #   --data ETTh1 \
 #   --features M \
 #   --seq_len 96 \
@@ -37,14 +38,15 @@ model_name=iTransformer
 #   --d_ff 256 \
 #   --itr 1
 
-# iTransformer - ECL - MSE
+# Transformer - ECL - MSE
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/electricity/ \
 #   --data_path electricity.csv \
-#   --model_id iTransformer_ECL_MSE_96_96 \
+#   --model_id Transformer_ECL_MSE_96_96 \
 #   --model $model_name \
 #   --loss 'MSE' \
+#   --train_epochs 10 \
 #   --data custom \
 #   --features M \
 #   --seq_len 96 \
@@ -60,14 +62,15 @@ model_name=iTransformer
 #   --learning_rate 0.0005 \
 #   --itr 1
 
-# iTransformer - traffic - MSE
+# Transformer - traffic - MSE
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/traffic/ \
 #   --data_path traffic.csv \
-#   --model_id iTransformer_traffic_MSE_96_96 \
+#   --model_id Transformer_traffic_MSE_96_96 \
 #   --model $model_name \
 #   --loss 'MSE' \
+#   --train_epochs 10 \
 #   --data custom \
 #   --features M \
 #   --seq_len 96 \
@@ -83,14 +86,15 @@ model_name=iTransformer
 #   --learning_rate 0.001 \
 #   --itr 1
 
-# iTransformer - traffic_reduced - MSE
+# Transformer - traffic_reduced - MSE
 python -u run.py \
   --is_training 1 \
   --root_path ./dataset/traffic/ \
   --data_path traffic_reduced.csv \
-  --model_id iTransformer_traffic_MSE_96_96 \
+  --model_id Transformer_traffic_MSE_96_96 \
   --model $model_name \
   --loss 'MSE' \
+  --train_epochs 1 \
   --data custom \
   --features M \
   --seq_len 96 \
@@ -106,25 +110,26 @@ python -u run.py \
   --learning_rate 0.001 \
   --itr 1
 
-# iTransformer - traffic_reduced - DILATE
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/traffic/ \
-  --data_path traffic_reduced.csv \
-  --model_id iTransformer_traffic_DILATE_96_96 \
-  --model $model_name \
-  --loss 'DILATE' \
-  --data custom \
-  --features M \
-  --seq_len 96 \
-  --pred_len 96 \
-  --e_layers 4 \
-  --enc_in 862 \
-  --dec_in 862 \
-  --c_out 862 \
-  --des 'Exp' \
-  --d_model 512 \
-  --d_ff 512 \
-  --batch_size 16 \
-  --learning_rate 0.001 \
-  --itr 1
+# Transformer - traffic_reduced - DILATE
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/traffic/ \
+#   --data_path traffic_reduced.csv \
+#   --model_id Transformer_traffic_DILATE_96_96 \
+#   --model $model_name \
+#   --loss 'DILATE' \
+#   --train_epochs 10 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 4 \
+#   --enc_in 862 \
+#   --dec_in 862 \
+#   --c_out 862 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 512 \
+#   --batch_size 16 \
+#   --learning_rate 0.001 \
+#   --itr 1

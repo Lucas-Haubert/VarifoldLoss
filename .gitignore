@@ -132,4 +132,7 @@ dmypy.json
 
 # Management of the folders
 dataset/
+original_repo_scripts/
+original_repo_models/
 outputs/
+slurm_outputs/

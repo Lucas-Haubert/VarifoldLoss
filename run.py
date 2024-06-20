@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
-    parser.add_argument('--train_epochs', type=int, default=3, help='train epochs')
+    parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
@@ -75,6 +75,25 @@ if __name__ == '__main__':
     parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
+    # DILATE
+    parser.add_argument('--alpha_dilate', type=float, default=0.5, help='alpha in dilate loss')
+
+    # TILDE-Q
+    parser.add_argument('--alpha_tildeq', type=float, default=0.5)
+    parser.add_argument('--gamma_tildeq', type=float, default=0.01)
+
+    # TimesNet
+    parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
+    parser.add_argument('--top_k', type=int, default=5, help='for TimesBlock')
+
+    # SegRNN
+    parser.add_argument('--rnn_type', default='gru', help='rnn_type')
+    parser.add_argument('--dec_way', default='pmf', help='decode way')
+    parser.add_argument('--seg_len', type=int, default=48, help='segment length')
+    parser.add_argument('--win_len', type=int, default=48, help='windows length')
+    parser.add_argument('--channel_id', type=int, default=1, help='Whether to enable channel position encoding')
+    parser.add_argument('--revin', type=int, default=0, help='RevIN; True 1 False 0')
+
     # iTransformer
     parser.add_argument('--exp_name', type=str, required=False, default='MTSF',
                         help='experiemnt name, options:[MTSF, partial_train]')
@@ -87,6 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_norm', type=int, default=True, help='use norm and denorm')
     parser.add_argument('--partial_start_index', type=int, default=0, help='the start index of variates for partial training, '
                                                                            'you can select [partial_start_index, min(enc_in + partial_start_index, N)]')
+
 
     args = parser.parse_args()
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -101,15 +121,14 @@ if __name__ == '__main__':
     print('Args in experiment:')
     print(args)
 
-    if args.exp_name == 'partial_train': # See Figure 8 of our paper, for the detail
+    if args.exp_name == 'partial_train':
         Exp = Exp_Long_Term_Forecast_Partial
-    else: # MTSF: multivariate time series forecasting
+    else:
         Exp = Exp_Long_Term_Forecast
 
 
     if args.is_training:
         for ii in range(args.itr):
-            # setting record of experiments
             setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
                 args.model_id,
                 args.model,
@@ -168,7 +187,7 @@ if __name__ == '__main__':
             args.des,
             args.class_strategy, ii)
 
-        exp = Exp(args)  # set experiments
+        exp = Exp(args)
         print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
         exp.test(setting, test=1)
         torch.cuda.empty_cache()
