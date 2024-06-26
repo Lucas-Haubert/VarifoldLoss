@@ -124,24 +124,35 @@ def TILDEQ_00(pred, true):
 
 
 def compute_metrics(pred, true):
+    # metrics = {
+    #     'MSE': MSE(pred, true),
+    #     'MAE': MAE(pred, true),
+    #     'RMSE': RMSE(pred, true),
+    #     'RMAE': RMAE(pred, true),
+    #     'MAPE': MAPE(pred, true),
+    #     'SMAPE': SMAPE(pred, true),
+    #     'MSPE': MSPE(pred, true),
+    #     'RSE': RSE(pred, true),
+    #     'CORR': CORR(pred, true),
+    #     'MASE': MASE(pred, true),
+    #     'DTW': DTW(pred, true),
+    #     'TDI': TDI(pred, true),
+    #     'DILATE_05': DILATE_05(pred, true),
+    #     'softDTW': softDTW(pred, true),
+    #     'softTDI': softTDI(pred, true),
+    #     'TILDEQ_05': TILDEQ_05(pred, true),
+    #     'TILDEQ_1': TILDEQ_1(pred, true),
+    #     'TILDEQ_00': TILDEQ_00(pred, true)
+    # }
     metrics = {
         'MSE': MSE(pred, true),
-        'MAE': MAE(pred, true),
-        'RMSE': RMSE(pred, true),
-        'RMAE': RMAE(pred, true),
-        'MAPE': MAPE(pred, true),
-        'SMAPE': SMAPE(pred, true),
-        'MSPE': MSPE(pred, true),
-        'RSE': RSE(pred, true),
-        'CORR': CORR(pred, true),
-        'MASE': MASE(pred, true),
         'DTW': DTW(pred, true),
         'TDI': TDI(pred, true),
         'DILATE_05': DILATE_05(pred, true),
-        'softDTW': softDTW(pred, true),
-        'softTDI': softTDI(pred, true),
-        'TILDEQ_05': TILDEQ_05(pred, true),
-        'TILDEQ_1': TILDEQ_1(pred, true),
-        'TILDEQ_00': TILDEQ_00(pred, true)
+        'softDTW': softDTW(pred, true)
     }
+    # metrics = {
+    #     'MSE': MSE(pred, true),
+    #     'MAE': MAE(pred, true)
+    # }
     return metrics

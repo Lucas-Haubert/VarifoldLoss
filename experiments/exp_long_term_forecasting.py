@@ -11,8 +11,9 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
-from loss.dilate.dilate_loss import DILATE, DILATE_independent
+from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
+from loss.varifold import VarifoldLoss, TSGaussGaussKernel
 
 warnings.filterwarnings('ignore')
 
@@ -20,20 +21,20 @@ warnings.filterwarnings('ignore')
 class Exp_Long_Term_Forecast(Exp_Basic):
     def __init__(self, args):
         super(Exp_Long_Term_Forecast, self).__init__(args)
+
         self.train_losses = []
         self.vali_losses = []
         self.test_losses = []
-        self.metrics_for_plots_over_epochs = {'MSE': {'val': [], 'test': []}, 
-                                              'MAE': {'val': [], 'test': []}, 
-                                              'DTW': {'val': [], 'test': []}}
 
-        self.idx_best_prediction = {'MSE': {'val': 0, 'test': 0},
-                                    'MAE': {'val': 0, 'test': 0},
-                                    'DTW': {'val': 0, 'test': 0}}
+        #self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'DILATE_05', 'softDTW', 'softTDI', 'TILDEQ_05', 'TILDEQ_1', 'TILDEQ_00']
+        #self.list_of_metrics = ['MSE', 'MAE']
+        self.list_of_metrics = ['MSE', 'DTW', 'TDI', 'DILATE_05', 'softDTW']
+        self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
+        self.idx_best_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
+        self.idx_worst_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
 
-        self.idx_worst_prediction = {'MSE': {'val': 0, 'test': 0},
-                                     'MAE': {'val': 0, 'test': 0},
-                                     'DTW': {'val': 0, 'test': 0}}
+        self.gains_test_loss = []
+        self.gains_test_metrics = {metric: [] for metric in self.list_of_metrics}
 
     def _build_model(self):
         model = self.model_dict[self.args.model].Model(self.args).float()
@@ -53,14 +54,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
     def _select_criterion(self):
         if self.args.loss == 'MSE':
             criterion = nn.MSELoss()
-        elif self.args.loss == 'MAE':
-            criterion = nn.L1Loss()
         elif self.args.loss == 'DILATE':
-            criterion = DILATE(alpha=self.args.alpha_dilate)
-        elif self.args.loss == 'DILATE_independent':
-            criterion = DILATE_independent
+            criterion = lambda x,y: DILATE(x,y, alpha = self.args.alpha_dilate)
         elif self.args.loss == "TILDEQ":
             criterion = lambda x,y: tildeq_loss(x,y, alpha = self.args.alpha_tildeq)
+        elif self.args.loss == "VARIFOLD":
+            #n_dim = self._get_data[0].features
+            n_dim = 863
+            K = TSGaussGaussKernel(sigma_t_1 = 10, sigma_s_1 = 29.4, sigma_t_2 = 10, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device)
+            # 29.4 is the square root of 862 (about) which is the number of channels in traffic
+            loss_function = VarifoldLoss(K, device=self.device)
+            criterion = lambda x,y: loss_function(x,y)
         return criterion
 
     def cumulative_computing_loss_metrics(self, dataloader, criterion):
@@ -69,7 +73,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = []
         trues = []
 
-        metrics_over_batches = {'MSE': [], 'MAE': [], 'DTW': []}
+        #metrics_over_batches = {'MAE': [], 'MSE': [], 'DTW': [], 'TDI': [], 'DILATE_05': [], 'softDTW': [], 'softTDI': [], 'TILDEQ_05': [], 'TILDEQ_1': [], 'TILDEQ_00': []}
+        #metrics_over_batches = {'MAE': [], 'MSE': []}
+        metrics_over_batches = {'MSE': [], 'DTW': [], 'TDI': [], 'DILATE_05': [], 'softDTW': []}
 
         self.model.eval()
         with torch.no_grad():
@@ -103,21 +109,28 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                pred = outputs.detach().cpu()
-                true = batch_y.detach().cpu()
+                # pred = outputs.detach().cpu()
+                # true = batch_y.detach().cpu()
 
-                loss = criterion(pred, true)
+                # loss = criterion(pred, true)
+
+                loss = criterion(outputs, batch_y)
+
+                loss = loss.detach().cpu().numpy()
 
                 total_loss.append(loss)
+
+                pred = outputs.detach().cpu()
+                true = batch_y.detach().cpu()
 
                 pred = pred.numpy()
                 true = true.numpy()
 
                 metrics_current_batch = compute_metrics(pred, true)
-                metrics_over_batches['MSE'].append(metrics_current_batch['MSE'])
-                metrics_over_batches['MAE'].append(metrics_current_batch['MAE'])
-                metrics_over_batches['DTW'].append(metrics_current_batch['DTW'])
 
+                for metric in self.list_of_metrics:
+                    metrics_over_batches[metric].append(metrics_current_batch[metric])
+                
                 preds.append(pred)
                 trues.append(true)
 
@@ -179,22 +192,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         self.model.train()
         return total_loss
 
-    def plot_train_loss(self, setting):
-        folder_path = './outputs/loss_wrt_epochs/' + setting + '/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        plt.figure(figsize=(10, 5))
-        plt.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='.', color='blue', label='Training Loss')
-        plt.plot(range(1, len(self.vali_losses) + 1), self.vali_losses, marker='.', color='red', label='Validation Loss')
-        plt.plot(range(1, len(self.test_losses) + 1), self.test_losses, marker='.', color='green', label='Test Loss')
-        plt.title(f"Model: {self.args.model}, Loss: {self.args.loss}, Observation Window: {self.args.seq_len}, Prediction Length: {self.args.pred_len}, Dataset: {self.args.data_path}")
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.legend()
-        plt.savefig(os.path.join(folder_path, "losses_epochs.png"))
-
-    def plot_metric_epochs(self, metric_name, setting):
-        folder_path = './outputs/metrics_wrt_epochs/' + setting + '/'
+    def plot_losses_and_metrics(self, metric_name, setting):
+        folder_path = './new_outputs/losses_and_metrics_wrt_epochs/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -202,21 +201,44 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         color = 'tab:blue'
         ax1.set_xlabel('Epochs')
-        ax1.set_ylabel('Training Loss')
-        ax1.plot(self.train_losses, color=color, label='Training Loss')
+        ax1.set_ylabel('Loss')
+        ax1.plot(range(1, len(self.train_losses) + 1), self.train_losses, marker='.', color='blue', label='Training Loss')
+        ax1.plot(range(1, len(self.vali_losses) + 1), self.vali_losses, marker='.', color='green', label='Validation Loss')
+        ax1.plot(range(1, len(self.test_losses) + 1), self.test_losses, marker='.', color='red', label='Test Loss')
         ax1.tick_params(axis='y')
 
         ax2 = ax1.twinx()
-        ax2.set_ylabel(metric_name)
-        ax2.plot(self.metrics_for_plots_over_epochs[metric_name]['val'], color='tab:red', label='Validation')
-        ax2.plot(self.metrics_for_plots_over_epochs[metric_name]['test'], color='tab:green', label='Test') 
+        ax2.set_ylabel('Metric')
+        validation_metric = self.metrics_for_plots_over_epochs[metric_name]['val']
+        test_metric = self.metrics_for_plots_over_epochs[metric_name]['test']
+        ax2.plot(range(1, len(validation_metric) + 1), validation_metric, marker='^', linestyle='--', color='black', label='Validation Metric')
+        ax2.plot(range(1, len(test_metric) + 1), test_metric, marker='s', color='black', label='Test Metric') 
         ax2.tick_params(axis='y')
 
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         ax1.legend(loc='upper left')
         ax2.legend(loc='upper right')
         plt.title(f"Model: {self.args.model}, Loss: {self.args.loss}, Metric: {metric_name}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}", pad=20)
-        plt.savefig(os.path.join(folder_path, f"{metric_name}_over_epochs.png"))
+        plt.savefig(os.path.join(folder_path, f"Loss_{self.args.loss}_Metric_{metric_name}_over_epochs.png"))
+
+    def plot_gains_wrt_epochs(self, metric_name, setting):
+        folder_path = './new_outputs/gains_wrt_epochs/' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Gain')
+        ax.plot(range(1, len(self.gains_test_loss) + 1), self.gains_test_loss, marker='.', color='red', label='Test Loss Gain (%)')
+        ax.plot(range(1, len(self.gains_test_metrics[metric_name]) + 1), self.gains_test_metrics[metric_name], marker='s', color='black', label='Test Metric Gain (%)')
+        ax.tick_params(axis='y')
+
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        ax.legend(loc='upper right')
+        plt.title(f"Model: {self.args.model}, Loss: {self.args.loss}, Metric: {metric_name}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}", pad=20)
+        plt.savefig(os.path.join(folder_path, f"Gains_for_Loss_{self.args.loss}_Metric_{metric_name}_over_epochs.png"))
+
 
     def plot_best_worst_predictions(self, setting, category):
 
@@ -234,11 +256,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 # Voir si je ne souffre pas du shuffle avec les indices
                 # pour le tester, comparer métrique attendue et métrique observée
 
-            for metric in ['MSE', 'MAE', 'DTW']:
+            for metric in self.list_of_metrics:
 
-                self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
+                #self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
+                self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
-                folder_path = './outputs/best_worst_predictions/' + category + '_' + metric + '_' + dataset + '/' + setting + '/'
+                #folder_path = './outputs/best_worst_predictions/' + category + '_' + metric + '_' + dataset + '/' + setting + '/'
+                folder_path = './new_outputs/best_worst_predictions/' + category + '_' + metric + '_' + dataset + '/' + setting + '/'
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
 
@@ -321,7 +345,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
-        path = os.path.join(self.args.checkpoints, setting)
+        #path = os.path.join(self.args.checkpoints, setting)
+        path = './new_outputs/checkpoints/' + setting
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -409,15 +434,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             self.vali_losses.append(vali_loss)
             self.test_losses.append(test_loss)
 
+            for metric in self.list_of_metrics:
+                self.metrics_for_plots_over_epochs[metric]['val'].append(vali_metrics_current_epoch[metric])
+                self.metrics_for_plots_over_epochs[metric]['test'].append(test_metrics_current_epoch[metric])
 
-            self.metrics_for_plots_over_epochs['MSE']['val'].append(vali_metrics_current_epoch['MSE'])
-            self.metrics_for_plots_over_epochs['MAE']['val'].append(vali_metrics_current_epoch['MAE'])
-            self.metrics_for_plots_over_epochs['DTW']['val'].append(vali_metrics_current_epoch['DTW'])
-
-            self.metrics_for_plots_over_epochs['MSE']['test'].append(test_metrics_current_epoch['MSE'])
-            self.metrics_for_plots_over_epochs['MAE']['test'].append(test_metrics_current_epoch['MAE'])
-            self.metrics_for_plots_over_epochs['DTW']['test'].append(test_metrics_current_epoch['DTW'])
-
+            # For plotting the gains on the test dataset
+            if epoch == 0:
+                initial_test_loss = test_loss
+                initial_test_metrics = test_metrics_current_epoch  
+            self.gains_test_loss.append(100*(initial_test_loss-test_loss)/initial_test_loss)
+            for metric in self.list_of_metrics:
+                    self.gains_test_metrics[metric].append(100*(initial_test_metrics[metric]-test_metrics_current_epoch[metric])/initial_test_metrics[metric])
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -426,6 +453,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 print("Early stopping")
                 break
 
+            print('Validation and test MSE/DTW after epoch', epoch+1, ":")
+            print('Validation MSE :', vali_metrics_current_epoch['MSE'])
+            print('Test MSE :', test_metrics_current_epoch['MSE'])
+            print('Validation DTW :', vali_metrics_current_epoch['DTW'])
+            print('Test DTW :', test_metrics_current_epoch['DTW'])
+
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
             # get_cka(self.args, setting, self.model, train_loader, self.device, epoch)
@@ -433,32 +466,20 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
-        self.plot_train_loss(setting)
+        for metric in self.list_of_metrics:
+            self.plot_losses_and_metrics(metric, setting)
+            self.plot_gains_wrt_epochs(metric, setting)
 
-        self.plot_metric_epochs("MSE", setting)
-        self.plot_metric_epochs("MAE", setting)
-        self.plot_metric_epochs("DTW", setting)
+        # for metric in self.list_of_metrics:
 
-        self.idx_best_prediction['MSE']['val'] = vali_metrics_over_batches['MSE'].index(max(vali_metrics_over_batches['MSE']))
-        self.idx_best_prediction['MSE']['test'] = test_metrics_over_batches['MSE'].index(max(test_metrics_over_batches['MSE']))
+        #     self.idx_best_prediction[metric]['val'] = vali_metrics_over_batches[metric].index(max(vali_metrics_over_batches[metric]))
+        #     self.idx_best_prediction[metric]['test'] = test_metrics_over_batches[metric].index(max(test_metrics_over_batches[metric]))
 
-        self.idx_best_prediction['MAE']['val'] = vali_metrics_over_batches['MAE'].index(max(vali_metrics_over_batches['MAE']))
-        self.idx_best_prediction['MAE']['test'] = test_metrics_over_batches['MAE'].index(max(test_metrics_over_batches['MAE']))
+        #     self.idx_worst_prediction[metric]['val'] = vali_metrics_over_batches[metric].index(min(vali_metrics_over_batches[metric]))
+        #     self.idx_worst_prediction[metric]['test'] = test_metrics_over_batches[metric].index(min(test_metrics_over_batches[metric]))
 
-        self.idx_best_prediction['DTW']['val'] = vali_metrics_over_batches['DTW'].index(max(vali_metrics_over_batches['DTW']))
-        self.idx_best_prediction['DTW']['test'] = test_metrics_over_batches['DTW'].index(max(test_metrics_over_batches['DTW']))
-
-        self.idx_worst_prediction['MSE']['val'] = vali_metrics_over_batches['MSE'].index(min(vali_metrics_over_batches['MSE']))
-        self.idx_worst_prediction['MSE']['test'] = test_metrics_over_batches['MSE'].index(min(test_metrics_over_batches['MSE']))
-
-        self.idx_worst_prediction['MAE']['val'] = vali_metrics_over_batches['MAE'].index(min(vali_metrics_over_batches['MAE']))
-        self.idx_worst_prediction['MAE']['test'] = test_metrics_over_batches['MAE'].index(min(test_metrics_over_batches['MAE']))
-
-        self.idx_worst_prediction['DTW']['val'] = vali_metrics_over_batches['DTW'].index(min(vali_metrics_over_batches['DTW']))
-        self.idx_worst_prediction['DTW']['test'] = test_metrics_over_batches['DTW'].index(min(test_metrics_over_batches['DTW']))
-
-        self.plot_best_worst_predictions(setting, 'best')
-        self.plot_best_worst_predictions(setting, 'worst')
+        #self.plot_best_worst_predictions(setting, 'best')
+        #self.plot_best_worst_predictions(setting, 'worst')
     
         return self.model
 
@@ -467,11 +488,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
         if test:
             print('loading model')
-            self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            #self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
         preds = []
         trues = []
-        folder_path = './outputs/visual_results/' + setting + '/'
+        #folder_path = './outputs/visual_results/' + setting + '/'
+        folder_path = './new_outputs/visual_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -520,7 +543,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 preds.append(pred)
                 trues.append(true)
-                if i in [0, 19, 39]:
+
+                number_samples = 3
+                number_batches = len(test_loader)
+                plot_indices = [i * number_batches // number_samples for i in range(number_samples)]
+
+                if i in plot_indices:
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
                         shape = input.shape
@@ -537,7 +565,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, Observation Window: {self.args.seq_len}, Prediction Length: {self.args.pred_len}, Dataset: {self.args.data_path}"
                     plt.title(title)
                     
-                    plt.savefig(os.path.join(folder_path, str(i) + '.png'))
+                    plt.savefig(os.path.join(folder_path, 'Sample ' + str(i) + '.png'))
                     plt.close()
                     
 
@@ -549,20 +577,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         #print('preds and trues shapes passed through the compute_metrics function:', preds.shape, trues.shape)
 
         # result save
-        folder_path = './outputs/numerical_results/' + setting + '/'
+        #folder_path = './outputs/numerical_results/' + setting + '/'
+        folder_path = './new_outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         results = compute_metrics(preds, trues)
-        # Ajust the choice of the metrics (I will probably go for 
-        # MSE, MAE, DTW, TDI, then DILATE and TILDEQ for the alphas 0.5, 1 and 0)
-        mse, mae, dtw, tdi, tildeq_05 , tildeq_1, tildeq_00 = results['MSE'], results['MAE'], results['DTW'], results['TDI'], results['TILDEQ_05'], results['TILDEQ_1'], results['TILDEQ_00']
-        print('mse:{}, mae:{}, dtw:{}, tdi:{}, tildeq_05:{}, tildeq_1:{}, tildeq_00:{}'.format(mse, mae, dtw, tdi, tildeq_05 , tildeq_1, tildeq_00))
+        # Ajust the choice of the metrics
+        mse, dtw, tdi, dilate_05, softdtw = results['MSE'], results['DTW'], results['TDI'], results['DILATE_05'], results['softDTW']
+        print('MSE:{}, DTW:{}, TDI:{}, DILATE_05:{}, softDTW:{}'.format(mse, dtw, tdi, dilate_05, softdtw))
+        print('Gains (%) (from first to last epoch):')
+        for metric in self.list_of_metrics:
+            print(f"{metric}:", self.gains_test_metrics[metric][-1])
 
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            f.write('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
+            f.write('MSE:{}, DTW:{}, TDI:{}, DILATE_05:{}, softDTW:{}'.format(mse, dtw, tdi, dilate_05, softdtw))
+            # f.write('Gains (%) (from first to last epoch):')
+            # for metric in self.list_of_metrics:
+            #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])
             f.write('\n')
             f.write('\n')
 
@@ -577,7 +611,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         pred_data, pred_loader = self._get_data(flag='pred')
 
         if load:
-            path = os.path.join(self.args.checkpoints, setting)
+            #path = os.path.join(self.args.checkpoints, setting)
+            path = './new_outputs/checkpoints/' + setting
             best_model_path = path + '/' + 'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
 
@@ -616,7 +651,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
         # result save
-        folder_path = './outputs/numerical_results/' + setting + '/'
+        #folder_path = './outputs/numerical_results/' + setting + '/'
+        folder_path = './new_outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 

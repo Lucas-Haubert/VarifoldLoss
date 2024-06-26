@@ -135,4 +135,5 @@ dataset/
 original_repo_scripts/
 original_repo_models/
 outputs/
+new_outputs/
 slurm_outputs/
