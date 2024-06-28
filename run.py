@@ -82,6 +82,12 @@ if __name__ == '__main__':
     parser.add_argument('--alpha_tildeq', type=float, default=0.5)
     parser.add_argument('--gamma_tildeq', type=float, default=0.01)
 
+    # VARIFOLD
+    parser.add_argument('--sigma_t_1', type=float, default=1)
+    parser.add_argument('--sigma_t_2', type=float, default=1)
+    parser.add_argument('--sigma_s_1', type=float, default=10)
+    parser.add_argument('--sigma_s_2', type=float, default=10)
+
     # TimesNet
     parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
     parser.add_argument('--top_k', type=int, default=5, help='for TimesBlock')

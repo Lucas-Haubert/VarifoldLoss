@@ -4,7 +4,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpua100
+#SBATCH --partition=gpup100
 
 # Module load
 module load anaconda3/2021.05/gcc-9.2.0
@@ -26,7 +26,7 @@ python -u run.py \
   --is_training 1 \
   --root_path ./dataset/traffic/ \
   --data_path traffic.csv \
-  --model_id iTransformer_traffic_VARIFOLD_96_96 \
+  --model_id iTransformer_traffic_VARIFOLD_7th_try_96_96 \
   --model $model_name \
   --loss 'VARIFOLD' \
   --train_epochs 10 \

@@ -146,10 +146,7 @@ def compute_metrics(pred, true):
     # }
     metrics = {
         'MSE': MSE(pred, true),
-        'DTW': DTW(pred, true),
-        'TDI': TDI(pred, true),
-        'DILATE_05': DILATE_05(pred, true),
-        'softDTW': softDTW(pred, true)
+        'DTW': DTW(pred, true)
     }
     # metrics = {
     #     'MSE': MSE(pred, true),

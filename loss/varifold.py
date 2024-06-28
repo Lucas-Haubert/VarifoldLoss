@@ -15,6 +15,22 @@ def TSGaussGaussKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = tor
     def K(x,y,u,v):
         return K1(x,y)*K2(u,v)
     return K
+
+def TSDotKernel(sigma_t,sigma_s,n_dim,dtype = torch.float,device = "cpu"):
+    sigmas = torch.ones((1,1,n_dim),dtype = dtype, device = device)
+    sigmas[0,0,0] /= sigma_t
+    sigmas[0,0,1:] /= sigma_s
+    def K(bx,by):
+        return torch.sum(((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]),axis=-1)**2
+    return K
+def TSGaussDotKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
+    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    K2 = TSDotKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)*K2(u,v)
+    return K
+    
 def time_embed(bx, device="cpu"):
     B, T, _ = bx.shape
     time = torch.arange(T, device=device).view(1,-1,1).repeat_interleave(B,0).float()

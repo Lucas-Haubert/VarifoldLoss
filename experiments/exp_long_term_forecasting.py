@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
-from loss.varifold import VarifoldLoss, TSGaussGaussKernel
+from loss.varifold import VarifoldLoss, TSGaussGaussKernel, TSGaussDotKernel
 
 warnings.filterwarnings('ignore')
 
@@ -28,13 +28,16 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         #self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'DILATE_05', 'softDTW', 'softTDI', 'TILDEQ_05', 'TILDEQ_1', 'TILDEQ_00']
         #self.list_of_metrics = ['MSE', 'MAE']
-        self.list_of_metrics = ['MSE', 'DTW', 'TDI', 'DILATE_05', 'softDTW']
+        #self.list_of_metrics = ['MSE', 'DTW', 'TDI', 'DILATE_05', 'softDTW']
+        self.list_of_metrics = ['MSE', 'DTW']
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
         self.idx_best_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
         self.idx_worst_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
 
         self.gains_test_loss = []
         self.gains_test_metrics = {metric: [] for metric in self.list_of_metrics}
+
+        self.number_of_actual_epochs = 0
 
     def _build_model(self):
         model = self.model_dict[self.args.model].Model(self.args).float()
@@ -60,9 +63,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             criterion = lambda x,y: tildeq_loss(x,y, alpha = self.args.alpha_tildeq)
         elif self.args.loss == "VARIFOLD":
             #n_dim = self._get_data[0].features
-            n_dim = 863
-            K = TSGaussGaussKernel(sigma_t_1 = 10, sigma_s_1 = 29.4, sigma_t_2 = 10, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device)
+            #n_dim = 863
+            #K = TSGaussGaussKernel(sigma_t_1 = 10, sigma_s_1 = 29.4, sigma_t_2 = 10, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device) # 1st try
+            #K = TSGaussGaussKernel(sigma_t_1 = 2, sigma_s_1 = 14.7, sigma_t_2 = 2, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 2nd try
+            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 3, sigma_t_2 = 1, sigma_s_2 = 3, n_dim = n_dim, device=self.device) # 3rd try
+            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 29.4, sigma_t_2 = 1, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device) # 4th try
+            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 5th try
+            #K = TSGaussGaussKernel(sigma_t_1 = 0.5, sigma_s_1 = 14.7, sigma_t_2 = 0.5, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 6th try 
+            #K = TSGaussDotKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 7th try new orientation kernel
             # 29.4 is the square root of 862 (about) which is the number of channels in traffic
+
+            K = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
             loss_function = VarifoldLoss(K, device=self.device)
             criterion = lambda x,y: loss_function(x,y)
         return criterion
@@ -451,6 +462,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
+                self.number_of_actual_epochs = epoch + 1
                 break
 
             print('Validation and test MSE/DTW after epoch', epoch+1, ":")
@@ -562,7 +574,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     plt.plot(input[0, :, -1], color='blue', label='Observations')
                     plt.legend()
                     
-                    title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, Observation Window: {self.args.seq_len}, Prediction Length: {self.args.pred_len}, Dataset: {self.args.data_path}"
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}"
                     plt.title(title)
                     
                     plt.savefig(os.path.join(folder_path, 'Sample ' + str(i) + '.png'))
@@ -584,8 +599,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         results = compute_metrics(preds, trues)
         # Ajust the choice of the metrics
-        mse, dtw, tdi, dilate_05, softdtw = results['MSE'], results['DTW'], results['TDI'], results['DILATE_05'], results['softDTW']
-        print('MSE:{}, DTW:{}, TDI:{}, DILATE_05:{}, softDTW:{}'.format(mse, dtw, tdi, dilate_05, softdtw))
+        mse, dtw = results['MSE'], results['DTW']
+        print('MSE:{}, DTW:{}'.format(mse, dtw))
         print('Gains (%) (from first to last epoch):')
         for metric in self.list_of_metrics:
             print(f"{metric}:", self.gains_test_metrics[metric][-1])
@@ -593,7 +608,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            f.write('MSE:{}, DTW:{}, TDI:{}, DILATE_05:{}, softDTW:{}'.format(mse, dtw, tdi, dilate_05, softdtw))
+            f.write('MSE:{}, DTW:{}'.format(mse, dtw))
             # f.write('Gains (%) (from first to last epoch):')
             # for metric in self.list_of_metrics:
             #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])

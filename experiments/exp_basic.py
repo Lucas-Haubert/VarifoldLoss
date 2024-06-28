@@ -1,6 +1,6 @@
 import os
 import torch
-from model import iTransformer, DLinear, TimesNet, SegRNN
+from model import iTransformer, DLinear, TimesNet, SegRNN, Transformer, MLP
 
 
 class Exp_Basic(object):
@@ -10,7 +10,9 @@ class Exp_Basic(object):
             'iTransformer': iTransformer,
             'DLinear': DLinear,
             'TimesNet': TimesNet,
-            'SegRNN': SegRNN
+            'SegRNN': SegRNN,
+            'Transformer': Transformer,
+            'MLP': MLP
         }
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
