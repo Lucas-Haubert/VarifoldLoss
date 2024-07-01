@@ -5,6 +5,7 @@ from tslearn.metrics import dtw, dtw_path
 
 from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
+from loss.varifold import TSGaussKernel, TSGaussGaussKernel, TSDotKernel, TSGaussDotKernel, time_embed, compute_position_tangent_volume, VarifoldLoss
 
 
 
@@ -89,8 +90,57 @@ def DILATE_metric(pred, true, alpha):
     return dilate
 
 
+def VARIFOLD_metric_traffic(pred, true):
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    pred = torch.from_numpy(pred).to(device)
+    true = torch.from_numpy(true).to(device)
+
+    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = 863, device=torch.device)
+    intermediate = VarifoldLoss(K, device=torch.device)
+
+    varifold = intermediate(pred, true)
+
+    return varifold
+
+def VARIFOLD_metric_electricity(pred, true):
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    pred = torch.from_numpy(pred).to(device)
+    true = torch.from_numpy(true).to(device)
+
+    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 8.9, sigma_t_2 = 1, sigma_s_2 = 8.9, n_dim = 322, device=device)
+    intermediate = VarifoldLoss(K, device=device)
+
+    varifold = intermediate(pred, true)
+
+    return varifold
+
+def VARIFOLD_metric_exchange(pred, true):
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    pred = torch.from_numpy(pred).to(device)
+    true = torch.from_numpy(true).to(device)
+
+    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 1.4, sigma_t_2 = 1, sigma_s_2 = 1.4, n_dim = 9, device=device)
+    intermediate = VarifoldLoss(K, device=device)
+
+    varifold = intermediate(pred, true)
+
+    return varifold
+
+
 def DILATE_05(pred, true):
     return DILATE_metric(pred, true, alpha=0.5)
+
+def DILATE_08(pred, true):
+    return DILATE_metric(pred, true, alpha=0.8)
+
+def DILATE_1(pred, true):  
+    return DILATE_metric(pred, true, alpha=1)
 
 
 def softDTW(pred, true):
@@ -123,33 +173,31 @@ def TILDEQ_00(pred, true):
     return TILDEQ_metric(pred, true, alpha=0)
 
 
-def compute_metrics(pred, true):
-    # metrics = {
-    #     'MSE': MSE(pred, true),
-    #     'MAE': MAE(pred, true),
-    #     'RMSE': RMSE(pred, true),
-    #     'RMAE': RMAE(pred, true),
-    #     'MAPE': MAPE(pred, true),
-    #     'SMAPE': SMAPE(pred, true),
-    #     'MSPE': MSPE(pred, true),
-    #     'RSE': RSE(pred, true),
-    #     'CORR': CORR(pred, true),
-    #     'MASE': MASE(pred, true),
-    #     'DTW': DTW(pred, true),
-    #     'TDI': TDI(pred, true),
-    #     'DILATE_05': DILATE_05(pred, true),
-    #     'softDTW': softDTW(pred, true),
-    #     'softTDI': softTDI(pred, true),
-    #     'TILDEQ_05': TILDEQ_05(pred, true),
-    #     'TILDEQ_1': TILDEQ_1(pred, true),
-    #     'TILDEQ_00': TILDEQ_00(pred, true)
-    # }
-    metrics = {
-        'MSE': MSE(pred, true),
-        'DTW': DTW(pred, true)
-    }
-    # metrics = {
-    #     'MSE': MSE(pred, true),
-    #     'MAE': MAE(pred, true)
-    # }
+def compute_metrics(pred, true, name_of_dataset):
+    
+    if name_of_dataset == 'traffic.csv':
+        metrics = {
+            'MSE': MSE(pred, true),
+            'DTW': DTW(pred, true),
+            'TDI': TDI(pred, true),
+            'DILATE': DILATE_08(pred, true),
+            'VARIFOLD': VARIFOLD_metric_traffic(pred, true)
+        }
+    elif name_of_dataset == 'electricity.csv':
+        metrics = {
+            'MSE': MSE(pred, true),
+            'DTW': DTW(pred, true),
+            'TDI': TDI(pred, true),
+            'DILATE': DILATE_08(pred, true),
+            'VARIFOLD': VARIFOLD_metric_electricity(pred, true)
+        }
+    elif name_of_dataset == 'exchange_rate.csv':
+        metrics = {
+            'MSE': MSE(pred, true),
+            'DTW': DTW(pred, true),
+            'TDI': TDI(pred, true),
+            'DILATE': DILATE_1(pred, true),
+            'VARIFOLD': VARIFOLD_metric_exchange(pred, true)
+        }
+    
     return metrics

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=TimesNet
+#SBATCH --job-name=B_16_lr_0dot0001_sigma_1_1_05sqrt_05sqrt_TimesNet_traffic_VARIFOLD_Gauss_96_96
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -19,32 +19,72 @@ source activate flexforecast
 # Ratrapper les valeurs des métriques pour iTransformer sur MSE
 
 # Choose the model
-model_name=iTransformer
+model_name=TimesNet
 
-# iTransformer - traffic - VARIFOLD
+
+# TimesNet - traffic - MSE
 python -u run.py \
   --is_training 1 \
   --root_path ./dataset/traffic/ \
   --data_path traffic.csv \
-  --model_id iTransformer_traffic_VARIFOLD_7th_try_96_96 \
+  --model_id B_16_lr_0dot0001_sigma_1_1_05sqrt_05sqrt_TimesNet_traffic_VARIFOLD_Gauss_96_96 \
   --model $model_name \
   --loss 'VARIFOLD' \
-  --train_epochs 10 \
+  --or_kernel 'Gaussian' \
+  --sigma_t_1 1 \
+  --sigma_t_2 1 \
+  --sigma_s_1 14.7 \
+  --sigma_s_2 14.7 \
+  --train_epochs 20 \
   --patience 5 \
   --data custom \
   --features M \
   --seq_len 96 \
   --pred_len 96 \
-  --e_layers 4 \
+  --e_layers 2 \
+  --factor 3 \
   --enc_in 862 \
   --dec_in 862 \
   --c_out 862 \
   --des 'Exp' \
   --d_model 512 \
   --d_ff 512 \
+  --top_k 5 \
   --batch_size 16 \
-  --learning_rate 0.001 \
+  --learning_rate 0.0001 \
   --itr 1
+
+
+
+
+
+
+
+
+# # iTransformer - traffic - VARIFOLD
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/traffic/ \
+#   --data_path traffic.csv \
+#   --model_id iTransformer_traffic_VARIFOLD_7th_try_96_96 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --train_epochs 10 \
+#   --patience 5 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 4 \
+#   --enc_in 862 \
+#   --dec_in 862 \
+#   --c_out 862 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 512 \
+#   --batch_size 16 \
+#   --learning_rate 0.001 \
+#   --itr 1
 
 # # iTransformer - electricity - MSE
 # python -u run.py \

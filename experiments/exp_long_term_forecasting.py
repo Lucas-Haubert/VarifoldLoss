@@ -26,10 +26,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         self.vali_losses = []
         self.test_losses = []
 
-        #self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'DILATE_05', 'softDTW', 'softTDI', 'TILDEQ_05', 'TILDEQ_1', 'TILDEQ_00']
-        #self.list_of_metrics = ['MSE', 'MAE']
-        #self.list_of_metrics = ['MSE', 'DTW', 'TDI', 'DILATE_05', 'softDTW']
-        self.list_of_metrics = ['MSE', 'DTW']
+        self.name_of_dataset = self.args.data_path
+
+        self.list_of_metrics = ['MSE', 'DTW', 'TDI', 'DILATE', 'VARIFOLD']
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
         self.idx_best_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
         self.idx_worst_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
@@ -62,20 +61,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         elif self.args.loss == "TILDEQ":
             criterion = lambda x,y: tildeq_loss(x,y, alpha = self.args.alpha_tildeq)
         elif self.args.loss == "VARIFOLD":
-            #n_dim = self._get_data[0].features
-            #n_dim = 863
-            #K = TSGaussGaussKernel(sigma_t_1 = 10, sigma_s_1 = 29.4, sigma_t_2 = 10, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device) # 1st try
-            #K = TSGaussGaussKernel(sigma_t_1 = 2, sigma_s_1 = 14.7, sigma_t_2 = 2, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 2nd try
-            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 3, sigma_t_2 = 1, sigma_s_2 = 3, n_dim = n_dim, device=self.device) # 3rd try
-            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 29.4, sigma_t_2 = 1, sigma_s_2 = 29.4, n_dim = n_dim, device=self.device) # 4th try
-            #K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 5th try
-            #K = TSGaussGaussKernel(sigma_t_1 = 0.5, sigma_s_1 = 14.7, sigma_t_2 = 0.5, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 6th try 
-            #K = TSGaussDotKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = n_dim, device=self.device) # 7th try new orientation kernel
-            # 29.4 is the square root of 862 (about) which is the number of channels in traffic
-
-            K = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-            loss_function = VarifoldLoss(K, device=self.device)
-            criterion = lambda x,y: loss_function(x,y)
+            if self.args.or_kernel == "Gaussian":
+                K = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "DotProduct":
+                K = TSGaussDotKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "Sum_DotProduct":
+                K_little = TSGaussDotKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1_kernel_little, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2_kernel_little, n_dim = self.args.enc_in + 1, device=self.device)
+                K_big = TSGaussDotKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1_kernel_big, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2_kernel_big, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function_little = VarifoldLoss(K_little, device=self.device)
+                loss_function_big = VarifoldLoss(K_big, device=self.device)
+                criterion = lambda x,y: loss_function_little(x,y) + loss_function_big(x,y)
+            elif self.args.or_kernel == "Sum_Gaussian":
+                K_little = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1_kernel_little, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2_kernel_little, n_dim = self.args.enc_in + 1, device=self.device)
+                K_big = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1_kernel_big, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2_kernel_big, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function_little = VarifoldLoss(K_little, device=self.device)
+                loss_function_big = VarifoldLoss(K_big, device=self.device)
+                criterion = lambda x,y: loss_function_little(x,y) + loss_function_big(x,y)
         return criterion
 
     def cumulative_computing_loss_metrics(self, dataloader, criterion):
@@ -84,9 +89,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = []
         trues = []
 
-        #metrics_over_batches = {'MAE': [], 'MSE': [], 'DTW': [], 'TDI': [], 'DILATE_05': [], 'softDTW': [], 'softTDI': [], 'TILDEQ_05': [], 'TILDEQ_1': [], 'TILDEQ_00': []}
-        #metrics_over_batches = {'MAE': [], 'MSE': []}
-        metrics_over_batches = {'MSE': [], 'DTW': [], 'TDI': [], 'DILATE_05': [], 'softDTW': []}
+        metrics_over_batches = {'MSE': [], 'DTW': [], 'TDI': [], 'DILATE': [], 'VARIFOLD': []}
 
         self.model.eval()
         with torch.no_grad():
@@ -120,11 +123,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                # pred = outputs.detach().cpu()
-                # true = batch_y.detach().cpu()
-
-                # loss = criterion(pred, true)
-
                 loss = criterion(outputs, batch_y)
 
                 loss = loss.detach().cpu().numpy()
@@ -137,7 +135,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 pred = pred.numpy()
                 true = true.numpy()
 
-                metrics_current_batch = compute_metrics(pred, true)
+                metrics_current_batch = compute_metrics(pred, true, self.name_of_dataset)
 
                 for metric in self.list_of_metrics:
                     metrics_over_batches[metric].append(metrics_current_batch[metric])
@@ -151,7 +149,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
 
-        metrics_current_epoch = compute_metrics(preds, trues) 
+        metrics_current_epoch = compute_metrics(preds, trues, self.name_of_dataset) 
 
         total_loss = np.average(total_loss)
         
@@ -322,7 +320,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                             pred = outputs
                             true = batch_y
 
-                            metric_batch = compute_metrics(pred, true)[metric]
+                            metric_batch = compute_metrics(pred, true, self.name_of_dataset)[metric]
 
                             # Ne pas oublier d'afficher la métrique
 
@@ -597,10 +595,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        results = compute_metrics(preds, trues)
+        results = compute_metrics(preds, trues, self.name_of_dataset)
         # Ajust the choice of the metrics
-        mse, dtw = results['MSE'], results['DTW']
-        print('MSE:{}, DTW:{}'.format(mse, dtw))
+        mse, dtw, tdi, dilate, varifold = results['MSE'], results['DTW'], results['TDI'], results['DILATE'], results['VARIFOLD']
+        print('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
         print('Gains (%) (from first to last epoch):')
         for metric in self.list_of_metrics:
             print(f"{metric}:", self.gains_test_metrics[metric][-1])
@@ -608,7 +606,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            f.write('MSE:{}, DTW:{}'.format(mse, dtw))
+            f.write('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
             # f.write('Gains (%) (from first to last epoch):')
             # for metric in self.list_of_metrics:
             #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])

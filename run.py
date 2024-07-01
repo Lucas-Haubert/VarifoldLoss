@@ -83,10 +83,17 @@ if __name__ == '__main__':
     parser.add_argument('--gamma_tildeq', type=float, default=0.01)
 
     # VARIFOLD
+    parser.add_argument('--or_kernel', type=str, default="Gaussian")
+
     parser.add_argument('--sigma_t_1', type=float, default=1)
     parser.add_argument('--sigma_t_2', type=float, default=1)
     parser.add_argument('--sigma_s_1', type=float, default=10)
     parser.add_argument('--sigma_s_2', type=float, default=10)
+
+    parser.add_argument('--sigma_s_1_kernel_little', type=float, default=10)
+    parser.add_argument('--sigma_s_2_kernel_little', type=float, default=10)
+    parser.add_argument('--sigma_s_1_kernel_big', type=float, default=10)
+    parser.add_argument('--sigma_s_2_kernel_big', type=float, default=10)
 
     # TimesNet
     parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
