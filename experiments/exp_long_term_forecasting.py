@@ -81,6 +81,14 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 loss_function_little = VarifoldLoss(K_little, device=self.device)
                 loss_function_big = VarifoldLoss(K_big, device=self.device)
                 criterion = lambda x,y: loss_function_little(x,y) + loss_function_big(x,y)
+            elif self.args.or_kernel == "3Sum_Gaussian":
+                K_1 = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_1, sigma_s_1 = self.args.sigma_s_1_kernel_1, sigma_t_2 = self.args.sigma_t_1_kernel_1, sigma_s_2 = self.args.sigma_s_1_kernel_1, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function_1 = VarifoldLoss(K_1, device=self.device)
+                K_2 = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_2, sigma_s_1 = self.args.sigma_s_1_kernel_2, sigma_t_2 = self.args.sigma_t_1_kernel_1, sigma_s_2 = self.args.sigma_s_1_kernel_1, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function_2 = VarifoldLoss(K_2, device=self.device)
+                K_3 = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_3, sigma_s_1 = self.args.sigma_s_1_kernel_3, sigma_t_2 = self.args.sigma_t_1_kernel_1, sigma_s_2 = self.args.sigma_s_1_kernel_1, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function_3 = VarifoldLoss(K_3, device=self.device)
+                criterion = lambda x,y: loss_function_1(x,y) + loss_function_2(x,y) + loss_function_3(x,y)
         return criterion
 
     def cumulative_computing_loss_metrics(self, dataloader, criterion):
@@ -359,6 +367,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if not os.path.exists(path):
             os.makedirs(path)
 
+        
         time_now = time.time()
 
         train_steps = len(train_loader)
@@ -434,7 +443,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     loss.backward()
                     model_optim.step()
 
-            print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+            """print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+
+            start_time_metrics = time.time()
 
             train_loss = np.average(train_loss)
             vali_loss, vali_metrics_current_epoch, vali_metrics_over_batches = self.cumulative_computing_loss_metrics(vali_loader, criterion)
@@ -455,6 +466,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             for metric in self.list_of_metrics:
                     self.gains_test_metrics[metric].append(100*(initial_test_metrics[metric]-test_metrics_current_epoch[metric])/initial_test_metrics[metric])
 
+            end_time_metrics = time.time()
+            print("Time to compute metrics after epoch", epoch + 1, ":", end_time_metrics - start_time_metrics)"""
+
+            # Just keep the essential (remove if i use cumulative function)
+            print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+            train_loss = np.average(train_loss)
+            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            test_loss = self.vali(test_data, test_loader, criterion)
+
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             early_stopping(vali_loss, self.model, path)
@@ -463,22 +483,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 self.number_of_actual_epochs = epoch + 1
                 break
 
-            print('Validation and test MSE/DTW after epoch', epoch+1, ":")
+            """print('Validation and test MSE/DTW after epoch', epoch+1, ":")
             print('Validation MSE :', vali_metrics_current_epoch['MSE'])
             print('Test MSE :', test_metrics_current_epoch['MSE'])
             print('Validation DTW :', vali_metrics_current_epoch['DTW'])
-            print('Test DTW :', test_metrics_current_epoch['DTW'])
+            print('Test DTW :', test_metrics_current_epoch['DTW'])"""
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
+            
 
             # get_cka(self.args, setting, self.model, train_loader, self.device, epoch)
 
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
+        
+        """
         for metric in self.list_of_metrics:
             self.plot_losses_and_metrics(metric, setting)
             self.plot_gains_wrt_epochs(metric, setting)
+        """
 
         # for metric in self.list_of_metrics:
 
@@ -595,10 +619,28 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
+        # results = compute_metrics(preds, trues, self.name_of_dataset)
+        # # Ajust the choice of the metrics
+        # mse, dtw, tdi, dilate, varifold = results['MSE'], results['DTW'], results['TDI'], results['DILATE'], results['VARIFOLD']
+        # print('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
+        # print('Gains (%) (from first to last epoch):')
+        # for metric in self.list_of_metrics:
+        #     print(f"{metric}:", self.gains_test_metrics[metric][-1])
+
+        # file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
+        # with open(file_path, 'a') as f:
+        #     f.write(setting + "  \n")
+        #     f.write('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
+        #     # f.write('Gains (%) (from first to last epoch):')
+        #     # for metric in self.list_of_metrics:
+        #     #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])
+        #     f.write('\n')
+        #     f.write('\n')
+
         results = compute_metrics(preds, trues, self.name_of_dataset)
         # Ajust the choice of the metrics
-        mse, dtw, tdi, dilate, varifold = results['MSE'], results['DTW'], results['TDI'], results['DILATE'], results['VARIFOLD']
-        print('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
+        mse, dtw= results['MSE'], results['DTW']
+        print('MSE:{}, DTW:{}'.format(mse, dtw))
         print('Gains (%) (from first to last epoch):')
         for metric in self.list_of_metrics:
             print(f"{metric}:", self.gains_test_metrics[metric][-1])
@@ -606,7 +648,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            f.write('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
+            f.write('MSE:{}, DTW:{}'.format(mse, dtw))
             # f.write('Gains (%) (from first to last epoch):')
             # for metric in self.list_of_metrics:
             #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])
@@ -618,6 +660,57 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         np.save(folder_path + 'true.npy', trues)
 
         return
+
+    def plot_batches_without_prediction(self, setting):
+
+        test_data, test_loader = self._get_data(flag='test')
+
+        dataset_name = self.args.data_path.split('.')[0]
+        folder_path = './new_outputs/dataset_visualization/' + dataset_name + '/' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        with torch.no_grad():
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float().to(self.device)
+
+                if 'PEMS' in self.args.data or 'Solar' in self.args.data:
+                    batch_x_mark = None
+                    batch_y_mark = None
+                else:
+                    batch_x_mark = batch_x_mark.float().to(self.device)
+                    batch_y_mark = batch_y_mark.float().to(self.device)
+
+                f_dim = -1 if self.args.features == 'MS' else 0
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                batch_y = batch_y.detach().cpu().numpy()
+                if test_data.scale and self.args.inverse:
+                    shape = batch_y.shape
+                    batch_y = test_data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
+
+                true = batch_y
+
+                number_samples = 3
+                number_batches = len(test_loader)
+                plot_indices = [i * number_batches // number_samples for i in range(number_samples)]
+
+                if i in plot_indices:
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='blue')
+                    plt.plot(input[0, :, -1], color='blue')
+                    
+                    title = f"Sample (1D) of lenght: {self.args.seq_len + self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Sample ' + str(i) + '.png'))
+                    plt.close()
 
 
     def predict(self, setting, load=False):

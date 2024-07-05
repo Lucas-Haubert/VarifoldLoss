@@ -95,6 +95,13 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_s_1_kernel_big', type=float, default=10)
     parser.add_argument('--sigma_s_2_kernel_big', type=float, default=10)
 
+    parser.add_argument('--sigma_t_1_kernel_1', type=float, default=10)
+    parser.add_argument('--sigma_t_1_kernel_2', type=float, default=10)
+    parser.add_argument('--sigma_t_1_kernel_3', type=float, default=10)
+    parser.add_argument('--sigma_s_1_kernel_1', type=float, default=10)
+    parser.add_argument('--sigma_s_1_kernel_2', type=float, default=10)
+    parser.add_argument('--sigma_s_1_kernel_3', type=float, default=10)
+
     # TimesNet
     parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
     parser.add_argument('--top_k', type=int, default=5, help='for TimesBlock')
@@ -160,6 +167,9 @@ if __name__ == '__main__':
                 args.distil,
                 args.des,
                 args.class_strategy, ii)
+
+            # exp = Exp(args)
+            # exp.plot_batches_without_prediction(setting)
 
             exp = Exp(args)
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))

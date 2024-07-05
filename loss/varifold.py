@@ -59,9 +59,12 @@ def VarifoldLoss(K,reduction = "mean", device="cpu"):
         c2 = torch.sum(vy[:,:,None] * K(py,py,ty,ty) * vy[:,None,:],dim =(1,2))
         blosses =  c0 -2*c1 + c2
         if reduction == "mean":
-            return torch.sum(blosses)/(B*(T-1)*C)
+            tensor_loss = torch.sum(blosses)/(B*(T-1)*C)
+            return tensor_loss.cpu()
         if reduction == "sum":
-            return torch.mean(blosses)
+            tensor_loss = torch.sum(blosses)
+            return tensor_loss.cpu()
         if reduction == "none":
-            return blosses
+            tensor_loss = blosses
+            return tensor_loss.cpu()
     return loss

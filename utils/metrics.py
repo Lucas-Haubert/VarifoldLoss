@@ -97,12 +97,26 @@ def VARIFOLD_metric_traffic(pred, true):
     pred = torch.from_numpy(pred).to(device)
     true = torch.from_numpy(true).to(device)
 
-    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = 863, device=torch.device)
-    intermediate = VarifoldLoss(K, device=torch.device)
+    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = 863, device=device)
+    intermediate = VarifoldLoss(K, device=device)
 
-    varifold = intermediate(pred, true)
+    # Without introducing a new batch_size
+    #varifold = intermediate(pred, true)
 
-    return varifold
+    #new_batch_size = 8
+    new_batch_size = 4
+    initial_number_of_batches = pred.shape[0]
+    varifold_total = 0
+
+    for i in range(0, initial_number_of_batches, new_batch_size):
+        pred_batch = pred[i:i+new_batch_size]
+        true_batch = true[i:i+new_batch_size]
+        varifold_batch = intermediate(pred_batch, true_batch)
+        varifold_total += varifold_batch * new_batch_size
+    
+    varifold = varifold_total / (initial_number_of_batches // new_batch_size)
+
+    return varifold.cpu()
 
 def VARIFOLD_metric_electricity(pred, true):
 
@@ -114,9 +128,23 @@ def VARIFOLD_metric_electricity(pred, true):
     K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 8.9, sigma_t_2 = 1, sigma_s_2 = 8.9, n_dim = 322, device=device)
     intermediate = VarifoldLoss(K, device=device)
 
-    varifold = intermediate(pred, true)
+    # Without introducing a new batch_size
+    #varifold = intermediate(pred, true)
 
-    return varifold
+    #new_batch_size = 8
+    new_batch_size = 4
+    initial_number_of_batches = pred.shape[0]
+    varifold_total = 0
+
+    for i in range(0, initial_number_of_batches, new_batch_size):
+        pred_batch = pred[i:i+new_batch_size]
+        true_batch = true[i:i+new_batch_size]
+        varifold_batch = intermediate(pred_batch, true_batch)
+        varifold_total += varifold_batch * new_batch_size
+    
+    varifold = varifold_total / (initial_number_of_batches // new_batch_size)
+
+    return varifold.cpu()
 
 def VARIFOLD_metric_exchange(pred, true):
 
@@ -130,7 +158,7 @@ def VARIFOLD_metric_exchange(pred, true):
 
     varifold = intermediate(pred, true)
 
-    return varifold
+    return varifold.cpu()
 
 
 def DILATE_05(pred, true):
@@ -173,31 +201,51 @@ def TILDEQ_00(pred, true):
     return TILDEQ_metric(pred, true, alpha=0)
 
 
+# def compute_metrics(pred, true, name_of_dataset):
+    
+#     if name_of_dataset == 'traffic.csv':
+#         metrics = {
+#             'MSE': MSE(pred, true),
+#             'DTW': DTW(pred, true),
+#             'TDI': TDI(pred, true),
+#             'DILATE': DILATE_08(pred, true),
+#             'VARIFOLD': VARIFOLD_metric_traffic(pred, true)
+#         }
+#     elif name_of_dataset == 'electricity.csv':
+#         metrics = {
+#             'MSE': MSE(pred, true),
+#             'DTW': DTW(pred, true),
+#             'TDI': TDI(pred, true),
+#             'DILATE': DILATE_08(pred, true),
+#             'VARIFOLD': VARIFOLD_metric_electricity(pred, true)
+#         }
+#     elif name_of_dataset == 'exchange_rate.csv':
+#         metrics = {
+#             'MSE': MSE(pred, true),
+#             'DTW': DTW(pred, true),
+#             'TDI': TDI(pred, true),
+#             'DILATE': DILATE_1(pred, true),
+#             'VARIFOLD': VARIFOLD_metric_exchange(pred, true)
+#         }
+    
+#     return metrics
+
 def compute_metrics(pred, true, name_of_dataset):
     
     if name_of_dataset == 'traffic.csv':
         metrics = {
             'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true),
-            'TDI': TDI(pred, true),
-            'DILATE': DILATE_08(pred, true),
-            'VARIFOLD': VARIFOLD_metric_traffic(pred, true)
+            'DTW': DTW(pred, true)
         }
     elif name_of_dataset == 'electricity.csv':
         metrics = {
             'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true),
-            'TDI': TDI(pred, true),
-            'DILATE': DILATE_08(pred, true),
-            'VARIFOLD': VARIFOLD_metric_electricity(pred, true)
+            'DTW': DTW(pred, true)
         }
     elif name_of_dataset == 'exchange_rate.csv':
         metrics = {
             'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true),
-            'TDI': TDI(pred, true),
-            'DILATE': DILATE_1(pred, true),
-            'VARIFOLD': VARIFOLD_metric_exchange(pred, true)
+            'DTW': DTW(pred, true)
         }
     
     return metrics
