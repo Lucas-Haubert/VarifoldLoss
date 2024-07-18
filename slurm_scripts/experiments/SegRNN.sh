@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=3Sum_time_1_03_01_space_05sqrt_015sqrt_005sqrt_SegRNN_electricity_VARIFOLD_B_32_lr_0dot0001
+#SBATCH --job-name=H_720_SegRNN_traffic_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_2_lr_0dot00001
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -18,6 +18,71 @@ model_name=SegRNN
 
 
 # For Tuesday meeting
+
+
+# # synthetic_dataset_trial
+
+# # SegRNN - synthetic_dataset_trial - MSE
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path synthetic_dataset_trial.csv \
+#   --model_id 16_layers_try_synthetic_SegRNN_synthetic_dataset_trial_MSE_B_4_lr_0dot00001 \
+#   --model $model_name \
+#   --loss 'MSE' \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --seg_len 24 \
+#   --e_layers 16 \
+#   --enc_in 1 \
+#   --dec_in 1 \
+#   --c_out 1 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 2048 \
+#   --dropout 0 \
+#   --batch_size 4 \
+#   --learning_rate 0.00001 \
+#   --itr 1
+
+# # SegRNN - synthetic - VARIFOLD
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path synthetic_dataset_trial.csv \
+#   --model_id 16_layers_try_synthetic_SegRNN_synthetic_dataset_trial_VARIFOLD_B_4_lr_0dot00001 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Gaussian' \
+#   --sigma_t_1 1 \
+#   --sigma_t_2 1 \
+#   --sigma_s_1 0.5 \
+#   --sigma_s_2 0.5 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --seg_len 24 \
+#   --e_layers 16 \
+#   --enc_in 1 \
+#   --dec_in 1 \
+#   --c_out 1 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 2048 \
+#   --dropout 0 \
+#   --batch_size 4 \
+#   --learning_rate 0.00001 \
+#   --itr 1
+
 
 
 # # traffic
@@ -77,39 +142,37 @@ model_name=SegRNN
 #   --learning_rate 0.001 \
 #   --itr 1
 
-# # SegRNN - traffic - VARIFOLD
-# python -u run.py \
-#   --is_training 1 \
-#   --root_path ./dataset/traffic/ \
-#   --data_path traffic.csv \
-#   --model_id 3Sum_time_1_03_01_space_05sqrt_015sqrt_005sqrt_SegRNN_traffic_VARIFOLD_B_32_lr_0dot0001 \
-#   --model $model_name \
-#   --loss 'VARIFOLD' \
-#   --or_kernel '3Sum_Gaussian' \
-#   --sigma_t_1_kernel_1 1 \
-#   --sigma_t_1_kernel_2 0.3 \
-#   --sigma_t_1_kernel_3 0.1 \
-#   --sigma_s_1_kernel_1 14.7 \
-#   --sigma_s_1_kernel_2 4.4 \
-#   --sigma_s_1_kernel_3 1.5 \
-#   --train_epochs 20 \
-#   --patience 5 \
-#   --data custom \
-#   --features M \
-#   --seq_len 96 \
-#   --pred_len 96 \
-#   --seg_len 24 \
-#   --e_layers 2 \
-#   --enc_in 862 \
-#   --dec_in 7 \
-#   --c_out 7 \
-#   --des 'Exp' \
-#   --d_model 512 \
-#   --d_ff 2048 \
-#   --dropout 0 \
-#   --batch_size 32 \
-#   --learning_rate 0.001 \
-#   --itr 1
+# SegRNN - traffic - VARIFOLD
+python -u run.py \
+  --is_training 1 \
+  --root_path ./dataset/traffic/ \
+  --data_path traffic.csv \
+  --model_id H_720_SegRNN_traffic_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_2_lr_0dot00001 \
+  --model $model_name \
+  --loss 'VARIFOLD' \
+  --or_kernel 'Gaussian' \
+  --sigma_t_1 1 \
+  --sigma_t_2 1 \
+  --sigma_s_1 14.7 \
+  --sigma_s_2 14.7 \
+  --train_epochs 20 \
+  --patience 5 \
+  --data custom \
+  --features M \
+  --seq_len 96 \
+  --pred_len 720 \
+  --seg_len 24 \
+  --e_layers 2 \
+  --enc_in 862 \
+  --dec_in 7 \
+  --c_out 7 \
+  --des 'Exp' \
+  --d_model 512 \
+  --d_ff 2048 \
+  --dropout 0 \
+  --batch_size 2 \
+  --learning_rate 0.00001 \
+  --itr 1
 
 
 
@@ -173,39 +236,39 @@ model_name=SegRNN
 #   --learning_rate 0.001 \
 #   --itr 1
 
-# SegRNN - electricity - VARIFOLD
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/electricity/ \
-  --data_path electricity.csv \
-  --model_id 3Sum_time_1_03_01_space_05sqrt_015sqrt_005sqrt_SegRNN_electricity_VARIFOLD_B_32_lr_0dot0001 \
-  --model $model_name \
-  --loss 'VARIFOLD' \
-  --or_kernel '3Sum_Gaussian' \
-  --sigma_t_1_kernel_1 1 \
-  --sigma_t_1_kernel_2 0.3 \
-  --sigma_t_1_kernel_3 0.1 \
-  --sigma_s_1_kernel_1 8.9 \
-  --sigma_s_1_kernel_2 2.7 \
-  --sigma_s_1_kernel_3 0.9 \
-  --train_epochs 20 \
-  --patience 5 \
-  --data custom \
-  --features M \
-  --seq_len 96 \
-  --pred_len 336 \
-  --seg_len 24 \
-  --e_layers 2 \
-  --enc_in 321 \
-  --dec_in 7 \
-  --c_out 7 \
-  --des 'Exp' \
-  --d_model 512 \
-  --d_ff 2048 \
-  --dropout 0 \
-  --batch_size 32 \
-  --learning_rate 0.001 \
-  --itr 1
+# # SegRNN - electricity - VARIFOLD
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/electricity/ \
+#   --data_path electricity.csv \
+#   --model_id 3Sum_time_1_03_01_space_05sqrt_015sqrt_005sqrt_SegRNN_electricity_VARIFOLD_B_32_lr_0dot0001 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel '3Sum_Gaussian' \
+#   --sigma_t_1_kernel_1 1 \
+#   --sigma_t_1_kernel_2 0.3 \
+#   --sigma_t_1_kernel_3 0.1 \
+#   --sigma_s_1_kernel_1 8.9 \
+#   --sigma_s_1_kernel_2 2.7 \
+#   --sigma_s_1_kernel_3 0.9 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 336 \
+#   --seg_len 24 \
+#   --e_layers 2 \
+#   --enc_in 321 \
+#   --dec_in 7 \
+#   --c_out 7 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 2048 \
+#   --dropout 0 \
+#   --batch_size 32 \
+#   --learning_rate 0.001 \
+#   --itr 1
 
 
 

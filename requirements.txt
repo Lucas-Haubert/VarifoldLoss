@@ -6,4 +6,4 @@ torch==2.0.0
 reformer-pytorch==1.4.4
 tslearn==0.6.3
 numba==0.53.1
-thredpoolctl==3.5.0
+ray[tune]==2.31.0

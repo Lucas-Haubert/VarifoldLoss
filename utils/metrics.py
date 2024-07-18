@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 
 from tslearn.metrics import dtw, dtw_path
@@ -7,7 +8,7 @@ from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
 from loss.varifold import TSGaussKernel, TSGaussGaussKernel, TSDotKernel, TSGaussDotKernel, time_embed, compute_position_tangent_volume, VarifoldLoss
 
-
+from scipy.fft import rfft, rfftfreq
 
 def MSE(pred, true):
     return np.mean((pred - true) ** 2)
@@ -200,52 +201,88 @@ def TILDEQ_1(pred, true):
 def TILDEQ_00(pred, true):
     return TILDEQ_metric(pred, true, alpha=0)
 
+# def fourier_spectra(series, frequency_range):
+    
+#     fourier_coefficients = rfft(series, axis=1)
+#     print("fourier_coefficients", fourier_coefficients)
+#     print("fourier_coefficients.shape", fourier_coefficients.shape)
+#     frequencies = rfftfreq(len(series[1]))
+#     print("frequencies", frequencies)
+#     print("frequencies.shape", frequencies.shape)
+    
+#     fourier_df = pd.DataFrame({'frequency': frequencies, 'amplitude': np.abs(fourier_coefficients)})
+    
+#     frequency_band = fourier_df[(fourier_df['frequency'] >= frequency_range[0]) & (fourier_df['frequency'] < frequency_range[1])]
+#     mean_fourier_coef = frequency_band['amplitude'].mean()
+    
+#     return mean_fourier_coef
 
-# def compute_metrics(pred, true, name_of_dataset):
+def fourier_spectra(series, frequency_range):
     
-#     if name_of_dataset == 'traffic.csv':
-#         metrics = {
-#             'MSE': MSE(pred, true),
-#             'DTW': DTW(pred, true),
-#             'TDI': TDI(pred, true),
-#             'DILATE': DILATE_08(pred, true),
-#             'VARIFOLD': VARIFOLD_metric_traffic(pred, true)
-#         }
-#     elif name_of_dataset == 'electricity.csv':
-#         metrics = {
-#             'MSE': MSE(pred, true),
-#             'DTW': DTW(pred, true),
-#             'TDI': TDI(pred, true),
-#             'DILATE': DILATE_08(pred, true),
-#             'VARIFOLD': VARIFOLD_metric_electricity(pred, true)
-#         }
-#     elif name_of_dataset == 'exchange_rate.csv':
-#         metrics = {
-#             'MSE': MSE(pred, true),
-#             'DTW': DTW(pred, true),
-#             'TDI': TDI(pred, true),
-#             'DILATE': DILATE_1(pred, true),
-#             'VARIFOLD': VARIFOLD_metric_exchange(pred, true)
-#         }
+    fourier_coefficients = rfft(series, axis=1)
+    #print("fourier_coefficients.shape", fourier_coefficients.shape)
     
-#     return metrics
+    frequencies = rfftfreq(series.shape[1])
+    #print("frequencies.shape", frequencies.shape)
+    
+    freq_indices = np.where((frequencies >= frequency_range[0]) & (frequencies < frequency_range[1]))[0]
+    #print("freq_indices.shape", freq_indices.shape)
+    
+    filtered_fourier_coefs = np.abs(fourier_coefficients)[:,freq_indices,:]
+    #print("filtered_fourier_coefs.shape", filtered_fourier_coefs.shape)
+    
+    mean_fourier_coefs_axis_1 = filtered_fourier_coefs.mean(axis=1)
+    #print("mean_fourier_coefs_axis_1.shape", mean_fourier_coefs_axis_1.shape)
 
-def compute_metrics(pred, true, name_of_dataset):
+    mean_fourier_coefs = mean_fourier_coefs_axis_1.mean()
+    #print("mean_fourier_coefs.shape", mean_fourier_coefs.shape)
+
+    return mean_fourier_coefs
+
+def rFFT(series_pred, series_ground, frequency_range):
+    mean_fourier_coef_pred = fourier_spectra(series_pred, frequency_range)
+    mean_fourier_coef_ground = fourier_spectra(series_ground, frequency_range)
+
+    metric = (mean_fourier_coef_pred - mean_fourier_coef_ground) / mean_fourier_coef_ground
+
+    return metric
+
+def calculate_spectral_entropy(series):
+
+    N = len(series[1])
+    #print("N", N)
+    yf = rfft(series, axis=1)
+    #print("yf.shape", yf.shape)
+    power_spectrum = 2.0/N * np.abs(yf[:, :N//2, :])
+    #print("power_spectrum.shape", power_spectrum.shape)
+    power_spectrum_norm = power_spectrum / np.sum(power_spectrum, axis=1, keepdims=True)
+    #print("power_spectrum_norm.shape", power_spectrum_norm.shape)
+    spectral_entropy = -np.sum(power_spectrum_norm * np.log2(power_spectrum_norm + 1e-12), axis=1)
+    #print("spectral_entropy.shape", spectral_entropy.shape)
+    mean_spectral_entropy = np.mean(spectral_entropy)
+    #print("mean_spectral_entropy", mean_spectral_entropy)
     
-    if name_of_dataset == 'traffic.csv':
-        metrics = {
+    return mean_spectral_entropy
+
+def rSE(series_pred, series_ground):
+    spectral_entropy_pred = calculate_spectral_entropy(series_pred)
+    spectral_entropy_ground = calculate_spectral_entropy(series_ground)
+
+    metric = (spectral_entropy_pred - spectral_entropy_ground) / spectral_entropy_ground
+
+    return metric
+
+
+def compute_metrics(pred, true):
+    
+    metrics = {
             'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true)
-        }
-    elif name_of_dataset == 'electricity.csv':
-        metrics = {
-            'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true)
-        }
-    elif name_of_dataset == 'exchange_rate.csv':
-        metrics = {
-            'MSE': MSE(pred, true),
-            'DTW': DTW(pred, true)
-        }
+            'MAE': MAE(pred, true),
+            'DTW': DTW(pred, true),
+            'rFFT_low': rFFT(pred, true, frequency_range=(0, 0.05)),
+            'rFFT_mid': rFFT(pred, true, frequency_range=(0.05, 0.25)),
+            'rFFT_high': rFFT(pred, true, frequency_range=(0.25, 0.5)),
+            'rSE': rSE(pred, true)
+    }
     
     return metrics

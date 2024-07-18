@@ -9,7 +9,7 @@ def TSGaussKernel(sigma_t,sigma_s,n_dim,dtype = torch.float,device = "cpu"):
         return torch.exp(-torch.sum(((sigmas*bx)[:,:,None,:] - (sigmas*by)[:,None,:,:])**2,dim=-1))
     return K
 def TSGaussGaussKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
     K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
     K2 = TSGaussKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
     def K(x,y,u,v):

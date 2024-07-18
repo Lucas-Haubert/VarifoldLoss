@@ -6,11 +6,21 @@ import random
 import numpy as np
 import time
 
+def compute_mean_median_std_metrics(metrics_list):
+    metrics_array = np.array(metrics_list)
+    mean_metrics = np.mean(metrics_array, axis=0)
+    median_metrics = np.median(metrics_array, axis=0)
+    std_metrics = np.std(metrics_array, axis=0)
+    return mean_metrics, median_metrics, std_metrics
+
 if __name__ == '__main__':
-    fix_seed = 2023
-    random.seed(fix_seed)
-    torch.manual_seed(fix_seed)
-    np.random.seed(fix_seed)
+    # fix_seed = 2023
+    # random.seed(fix_seed)
+    # torch.manual_seed(fix_seed)
+    # np.random.seed(fix_seed)
+
+    seeds = [2023, 2024, 2025, 2026, 2027]  # Different seeds for each iteration
+    metrics_results = []
 
     parser = argparse.ArgumentParser(description='iTransformer')
 
@@ -22,8 +32,10 @@ if __name__ == '__main__':
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='custom', help='dataset type')
-    parser.add_argument('--root_path', type=str, default='./dataset/electricity/', help='root path of the data file')
-    parser.add_argument('--data_path', type=str, default='electricity.csv', help='data csv file')
+    parser.add_argument('--root_path', type=str, default='./dataset/synthetic/', help='root path of the data file')
+    parser.add_argument('--data_path', type=str, default='SNR_infty.csv', help='data csv file')
+    parser.add_argument('--structural_data_path', type=str, default='SNR_infty.csv', help='data csv file')
+    parser.add_argument('--evaluation_mode', type=str, default='raw', help='raw or structural')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
@@ -90,6 +102,11 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_s_1', type=float, default=10)
     parser.add_argument('--sigma_s_2', type=float, default=10)
 
+    parser.add_argument('--sigma_t_1_kernel_little', type=float, default=10)
+    parser.add_argument('--sigma_t_2_kernel_little', type=float, default=10)
+    parser.add_argument('--sigma_t_1_kernel_big', type=float, default=10)
+    parser.add_argument('--sigma_t_2_kernel_big', type=float, default=10)
+
     parser.add_argument('--sigma_s_1_kernel_little', type=float, default=10)
     parser.add_argument('--sigma_s_2_kernel_little', type=float, default=10)
     parser.add_argument('--sigma_s_1_kernel_big', type=float, default=10)
@@ -149,7 +166,14 @@ if __name__ == '__main__':
 
     if args.is_training:
         for ii in range(args.itr):
-            setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+
+            seed = seeds[ii % len(seeds)]  
+            random.seed(seed)
+            torch.manual_seed(seed)
+            np.random.seed(seed)
+
+            setting = 'evalmode_{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+                args.evaluation_mode,
                 args.model_id,
                 args.model,
                 args.data,
@@ -180,7 +204,12 @@ if __name__ == '__main__':
 
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             start_testing = time.time()
-            exp.test(setting, test=1)
+
+            if args.evaluation_mode == 'raw':
+                test_metrics = exp.test(setting, test=1)
+            elif args.evaluation_mode == 'structural':
+                test_metrics = exp.test_structural(setting, test=1)
+
             end_testing = time.time()
             print("Testing: {} seconds".format(end_testing - start_testing))
 
@@ -189,9 +218,25 @@ if __name__ == '__main__':
                 exp.predict(setting, True)
 
             torch.cuda.empty_cache()
+
+            metrics_results.append(test_metrics)
+
+        mean_metrics, median_metrics, std_metrics = compute_mean_median_std_metrics(metrics_results)
+
+        list_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
+
+        mean_metrics_dict = {metric: mean for metric, mean in zip(list_metrics, mean_metrics)}
+        median_metrics_dict = {metric: median for metric, median in zip(list_metrics, median_metrics)}
+        std_metrics_dict = {metric: std for metric, std in zip(list_metrics, std_metrics)}
+
+        print('Mean metrics:', mean_metrics_dict)
+        print('Median metrics:', median_metrics_dict)
+        print('Standard deviation of metrics:', std_metrics_dict)
+
     else:
         ii = 0
-        setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+        setting = 'evalmode{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+            args.evaluation_mode,
             args.model_id,
             args.model,
             args.data,
