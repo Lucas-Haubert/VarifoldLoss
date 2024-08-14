@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
-from loss.varifold import VarifoldLoss, TSGaussGaussKernel, TSGaussDotKernel
+from loss.varifold import VarifoldLoss, TSGaussGaussKernel, TSGaussDotKernel, TSGaussGaussKernelSum, TSGaussPosOnly, TSGaussCurrent, TSGaussCurrentKernelSum, TSCauchyCurrentKernel, TSCauchyPosOnlyKernel, TSCauchyDotProductKernel, TSCauchyGaussianKernel
 
 warnings.filterwarnings('ignore')
 
@@ -28,7 +28,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         self.name_of_dataset = self.args.data_path
 
-        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
+        #self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
+        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI']
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
         self.idx_best_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
         self.idx_worst_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
@@ -73,12 +74,49 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 K = TSGaussDotKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
                 loss_function = VarifoldLoss(K, device=self.device)
                 criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "Sum_Gaussian":
+            elif self.args.or_kernel == "Sum_Varif":
                 K_little = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_little, sigma_s_1 = self.args.sigma_s_1_kernel_little, sigma_t_2 = self.args.sigma_t_2_kernel_little, sigma_s_2 = self.args.sigma_s_2_kernel_little, n_dim = self.args.enc_in + 1, device=self.device)
                 K_big = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_big, sigma_s_1 = self.args.sigma_s_1_kernel_big, sigma_t_2 = self.args.sigma_t_2_kernel_big, sigma_s_2 = self.args.sigma_s_2_kernel_big, n_dim = self.args.enc_in + 1, device=self.device)
                 loss_function_little = VarifoldLoss(K_little, device=self.device)
                 loss_function_big = VarifoldLoss(K_big, device=self.device)
                 criterion = lambda x,y: 0.5*loss_function_little(x,y) + 0.5*loss_function_big(x,y)
+            elif self.args.or_kernel == "Sum_Kernels_Gaussian":
+                K = TSGaussGaussKernelSum(sigma_t_1_little = self.args.sigma_t_1_little, sigma_s_1_little = self.args.sigma_s_1_little, sigma_t_2_little = self.args.sigma_t_2_little, sigma_s_2_little = self.args.sigma_s_2_little, 
+                                          sigma_t_1_big = self.args.sigma_t_1_big, sigma_s_1_big = self.args.sigma_s_1_big, sigma_t_2_big = self.args.sigma_t_2_big, sigma_s_2_big = self.args.sigma_s_2_big,
+                                          n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "Sum_Kernels_Current":
+                K = TSGaussCurrentKernelSum(sigma_t_1_little = self.args.sigma_t_1_little, sigma_s_1_little = self.args.sigma_s_1_little, sigma_t_2_little = self.args.sigma_t_2_little, sigma_s_2_little = self.args.sigma_s_2_little, 
+                                          sigma_t_1_big = self.args.sigma_t_1_big, sigma_s_1_big = self.args.sigma_s_1_big, sigma_t_2_big = self.args.sigma_t_2_big, sigma_s_2_big = self.args.sigma_s_2_big,
+                                          n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "Current":
+                K = TSGaussCurrent(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "PosOnly":
+                K = TSGaussPosOnly(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+        elif self.args.loss == "VARIFOLD_Cauchy":
+            if self.args.or_kernel == "Current":
+                K = TSCauchyCurrentKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "PosOnly":
+                K = TSCauchyPosOnlyKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "DotProduct":
+                K = TSCauchyDotProductKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
+            elif self.args.or_kernel == "Gaussian":
+                K = TSCauchyGaussianKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
+                loss_function = VarifoldLoss(K, device=self.device)
+                criterion = lambda x,y: loss_function(x,y)
         return criterion
 
     def cumulative_computing_loss_metrics(self, dataloader, criterion):
@@ -609,39 +647,21 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        # results = compute_metrics(preds, trues, self.name_of_dataset)
-        # # Ajust the choice of the metrics
-        # mse, dtw, tdi, dilate, varifold = results['MSE'], results['DTW'], results['TDI'], results['DILATE'], results['VARIFOLD']
-        # print('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
-        # print('Gains (%) (from first to last epoch):')
-        # for metric in self.list_of_metrics:
-        #     print(f"{metric}:", self.gains_test_metrics[metric][-1])
-
-        # file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
-        # with open(file_path, 'a') as f:
-        #     f.write(setting + "  \n")
-        #     f.write('MSE:{}, DTW:{}, TDI:{}, DILATE:{}, VARIFOLD:{}'.format(mse, dtw, tdi, dilate, varifold))
-        #     # f.write('Gains (%) (from first to last epoch):')
-        #     # for metric in self.list_of_metrics:
-        #     #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])
-        #     f.write('\n')
-        #     f.write('\n')
-
         results = compute_metrics(preds, trues)
-        # Ajust the choice of the metrics
-        # 'MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE'
-        mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse = results['MSE'], results['MAE'], results['DTW'], results['rFFT_low'], results['rFFT_mid'], results['rFFT_high'], results['rSE']
-        #print('MSE:{}, DTW:{}'.format(mse, dtw))
-        print('MSE:{}, MAE:{}, DTW:{}, rFFT_low:{}, rFFT_mid:{}, rFFT_high:{}, rSE:{}'.format(mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse))
+
         # print('Gains (%) (from first to last epoch):')
         # for metric in self.list_of_metrics:
         #     print(f"{metric}:", self.gains_test_metrics[metric][-1])
+
+        metrics = {metric: results[metric] for metric in self.list_of_metrics}
+
+        formatted_metrics = ", ".join([f"{metric}:{metrics[metric]}" for metric in self.list_of_metrics])
+        print(formatted_metrics)
 
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            #f.write('MSE:{}, DTW:{}'.format(mse, dtw))
-            f.write('MSE:{}, MAE:{}, DTW:{}, rFFT_low:{}, rFFT_mid:{}, rFFT_high:{}, rSE:{}'.format(mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse))
+            f.write(formatted_metrics + '\n')
             # f.write('Gains (%) (from first to last epoch):')
             # for metric in self.list_of_metrics:
             #     f.write(f"{metric}:", self.gains_test_metrics[metric][-1])
@@ -652,7 +672,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         np.save(folder_path + 'pred.npy', preds)
         np.save(folder_path + 'true.npy', trues)
 
-        return [mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse]
+        return results
 
     def test_structural(self, setting, test=0):
         print('Beginning the test')
@@ -764,13 +784,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             os.makedirs(folder_path)
 
         results = compute_metrics(preds, trues)
-        mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse = results['MSE'], results['MAE'], results['DTW'], results['rFFT_low'], results['rFFT_mid'], results['rFFT_high'], results['rSE']
-        print('MSE:{}, MAE:{}, DTW:{}, rFFT_low:{}, rFFT_mid:{}, rFFT_high:{}, rSE:{}'.format(mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse))
+
+        metrics = {metric: results[metric] for metric in self.list_of_metrics}
+        formatted_metrics = ", ".join([f"{metric}:{metrics[metric]}" for metric in self.list_of_metrics])
+        print(formatted_metrics)
 
         file_path = os.path.join(folder_path, f"txt_metrics_{setting}.txt")
         with open(file_path, 'a') as f:
             f.write(setting + "  \n")
-            f.write('MSE:{}, MAE:{}, DTW:{}, rFFT_low:{}, rFFT_mid:{}, rFFT_high:{}, rSE:{}'.format(mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse))
+            f.write(formatted_metrics + '\n')
             f.write('\n')
             f.write('\n')
 
@@ -778,7 +800,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         np.save(folder_path + 'pred.npy', preds)
         np.save(folder_path + 'true.npy', trues)
 
-        return [mse, mae, dtw, rfft_low, rfft_mid, rfft_high, rse]
+        return results
 
     def plot_batches_without_prediction(self, setting):
 
@@ -884,4 +906,94 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         np.save(folder_path + 'real_prediction.npy', preds)
 
         return
+
+    
+    def test_on_vali(self, setting, test=0):
+        print('Beginning the test on validation dataset')
+        vali_data, vali_loader = self._get_data(flag='val')
+        if test:
+            print('loading model')
+            #self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
+
+        preds = []
+        trues = []
+
+        self.model.eval()
+        with torch.no_grad():
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float().to(self.device)
+
+                if 'PEMS' in self.args.data or 'Solar' in self.args.data:
+                    batch_x_mark = None
+                    batch_y_mark = None
+                else:
+                    batch_x_mark = batch_x_mark.float().to(self.device)
+                    batch_y_mark = batch_y_mark.float().to(self.device)
+
+                # decoder input
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                # encoder - decoder
+                if self.args.use_amp:
+                    with torch.cuda.amp.autocast():
+                        if self.args.output_attention:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                        else:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                else:
+                    if self.args.output_attention:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+
+                    else:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+
+                f_dim = -1 if self.args.features == 'MS' else 0
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                outputs = outputs.detach().cpu().numpy()
+                batch_y = batch_y.detach().cpu().numpy()
+                if vali_data.scale and self.args.inverse:
+                    shape = outputs.shape
+                    outputs = test_data.inverse_transform(outputs.squeeze(0)).reshape(shape)
+                    batch_y = test_data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
+
+                pred = outputs
+                true = batch_y
+
+                preds.append(pred)
+                trues.append(true)
+                    
+
+        preds = np.array(preds)
+        trues = np.array(trues)
+        
+        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
+        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+
+        # result save
+        folder_path = './new_outputs/numerical_results/test_on_vali' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        results = compute_metrics(preds, trues)
+
+        metrics = {metric: results[metric] for metric in self.list_of_metrics}
+
+        formatted_metrics = ", ".join([f"{metric}:{metrics[metric]}" for metric in self.list_of_metrics])
+        print(formatted_metrics)
+
+        file_path = os.path.join(folder_path, f"txt_metrics_on_vali_{setting}.txt")
+        with open(file_path, 'a') as f:
+            f.write(setting + "  \n")
+            f.write(formatted_metrics + '\n')
+            f.write('\n')
+            f.write('\n')
+
+        np.save(folder_path + 'metrics.npy', np.array(list(results.values())))
+        np.save(folder_path + 'pred.npy', preds)
+        np.save(folder_path + 'true.npy', trues)
+
+        return results
 

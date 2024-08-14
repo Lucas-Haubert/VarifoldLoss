@@ -5,12 +5,33 @@ from experiments.exp_long_term_forecasting_partial import Exp_Long_Term_Forecast
 import random
 import numpy as np
 import time
+import json
+import os
+
+# def compute_mean_median_std_metrics(metrics_list):
+#     metrics_array = np.array(metrics_list)
+#     mean_metrics = np.mean(metrics_array, axis=0)
+#     median_metrics = np.median(metrics_array, axis=0)
+#     std_metrics = np.std(metrics_array, axis=0)
+#     return mean_metrics, median_metrics, std_metrics
 
 def compute_mean_median_std_metrics(metrics_list):
-    metrics_array = np.array(metrics_list)
-    mean_metrics = np.mean(metrics_array, axis=0)
-    median_metrics = np.median(metrics_array, axis=0)
-    std_metrics = np.std(metrics_array, axis=0)
+    # Extraire les noms des métriques à partir du premier dictionnaire
+    metric_names = metrics_list[0].keys()
+
+    # Initialiser des listes pour chaque métrique
+    aggregated_metrics = {metric: [] for metric in metric_names}
+
+    # Remplir les listes avec les valeurs de chaque métrique pour toutes les itérations
+    for metrics in metrics_list:
+        for metric in metric_names:
+            aggregated_metrics[metric].append(metrics[metric])
+
+    # Calculer les statistiques pour chaque métrique
+    mean_metrics = {metric: np.mean(aggregated_metrics[metric]) for metric in metric_names}
+    median_metrics = {metric: np.median(aggregated_metrics[metric]) for metric in metric_names}
+    std_metrics = {metric: np.std(aggregated_metrics[metric]) for metric in metric_names}
+
     return mean_metrics, median_metrics, std_metrics
 
 if __name__ == '__main__':
@@ -21,6 +42,8 @@ if __name__ == '__main__':
 
     seeds = [2023, 2024, 2025, 2026, 2027]  # Different seeds for each iteration
     metrics_results = []
+    metrics_on_vali_results = []
+    heatmap_dict = {}
 
     parser = argparse.ArgumentParser(description='iTransformer')
 
@@ -102,15 +125,15 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_s_1', type=float, default=10)
     parser.add_argument('--sigma_s_2', type=float, default=10)
 
-    parser.add_argument('--sigma_t_1_kernel_little', type=float, default=10)
-    parser.add_argument('--sigma_t_2_kernel_little', type=float, default=10)
-    parser.add_argument('--sigma_t_1_kernel_big', type=float, default=10)
-    parser.add_argument('--sigma_t_2_kernel_big', type=float, default=10)
+    parser.add_argument('--sigma_t_1_little', type=float, default=10)
+    parser.add_argument('--sigma_t_2_little', type=float, default=10)
+    parser.add_argument('--sigma_t_1_big', type=float, default=10)
+    parser.add_argument('--sigma_t_2_big', type=float, default=10)
 
-    parser.add_argument('--sigma_s_1_kernel_little', type=float, default=10)
-    parser.add_argument('--sigma_s_2_kernel_little', type=float, default=10)
-    parser.add_argument('--sigma_s_1_kernel_big', type=float, default=10)
-    parser.add_argument('--sigma_s_2_kernel_big', type=float, default=10)
+    parser.add_argument('--sigma_s_1_little', type=float, default=10)
+    parser.add_argument('--sigma_s_2_little', type=float, default=10)
+    parser.add_argument('--sigma_s_1_big', type=float, default=10)
+    parser.add_argument('--sigma_s_2_big', type=float, default=10)
 
     parser.add_argument('--sigma_t_1_kernel_1', type=float, default=10)
     parser.add_argument('--sigma_t_1_kernel_2', type=float, default=10)
@@ -143,6 +166,9 @@ if __name__ == '__main__':
     parser.add_argument('--use_norm', type=int, default=True, help='use norm and denorm')
     parser.add_argument('--partial_start_index', type=int, default=0, help='the start index of variates for partial training, '
                                                                            'you can select [partial_start_index, min(enc_in + partial_start_index, N)]')
+
+    parser.add_argument('--heatmaps_base_name', type=str, required=False, default='heatmaps',
+                        help='Base name for heatmaps without sigma specifications')
 
 
     args = parser.parse_args()
@@ -213,6 +239,9 @@ if __name__ == '__main__':
             end_testing = time.time()
             print("Testing: {} seconds".format(end_testing - start_testing))
 
+            if args.evaluation_mode == 'raw':
+                vali_metrics = exp.test_on_vali(setting, test=1)
+
             if args.do_predict:
                 print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
                 exp.predict(setting, True)
@@ -220,22 +249,34 @@ if __name__ == '__main__':
             torch.cuda.empty_cache()
 
             metrics_results.append(test_metrics)
+            metrics_on_vali_results.append(vali_metrics)
 
         mean_metrics, median_metrics, std_metrics = compute_mean_median_std_metrics(metrics_results)
 
-        list_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
+        mean_vali_metrics, median_vali_metrics, std_vali_metrics = compute_mean_median_std_metrics(metrics_on_vali_results)
 
-        mean_metrics_dict = {metric: mean for metric, mean in zip(list_metrics, mean_metrics)}
-        median_metrics_dict = {metric: median for metric, median in zip(list_metrics, median_metrics)}
-        std_metrics_dict = {metric: std for metric, std in zip(list_metrics, std_metrics)}
+        # list_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
+        list_metrics = ['MSE', 'MAE', 'DTW', 'TDI']
+
+        mean_metrics_dict = {metric: mean_metrics[metric] for metric in list_metrics}
+        median_metrics_dict = {metric: median_metrics[metric] for metric in list_metrics}
+        std_metrics_dict = {metric: std_metrics[metric] for metric in list_metrics}
 
         print('Mean metrics:', mean_metrics_dict)
         print('Median metrics:', median_metrics_dict)
         print('Standard deviation of metrics:', std_metrics_dict)
 
+        mean_vali_metrics_dict = {metric: mean_vali_metrics[metric] for metric in list_metrics}
+        median_vali_metrics_dict = {metric: median_vali_metrics[metric] for metric in list_metrics}
+        std_vali_metrics_dict = {metric: std_vali_metrics[metric] for metric in list_metrics}
+
+        print('Mean metrics on validation dataset:', mean_vali_metrics_dict)
+        print('Median metrics on validation dataset:', median_vali_metrics_dict)
+        print('Standard deviation of metrics on validation dataset:', std_vali_metrics_dict)
+
     else:
         ii = 0
-        setting = 'evalmode{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+        setting = 'evalmode_{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
             args.evaluation_mode,
             args.model_id,
             args.model,
@@ -257,5 +298,36 @@ if __name__ == '__main__':
 
         exp = Exp(args)
         print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting, test=1)
+
+        if args.evaluation_mode == 'raw':
+            test_metrics = exp.test(setting, test=1)
+        elif args.evaluation_mode == 'structural':
+            test_metrics = exp.test_structural(setting, test=1)
+
+        heatmap_file_path = os.path.join('new_outputs', 'numerical_results', f'{args.heatmaps_base_name}.json')
+
+        try:
+            if os.path.exists(heatmap_file_path):
+                with open(heatmap_file_path, 'r') as json_file:
+                    heatmap_dict = json.load(json_file)
+            else:
+                heatmap_dict = {}
+        except json.JSONDecodeError as e:
+            print(f"Erreur lors du chargement du fichier JSON : {e}")
+            heatmap_dict = {}
+
+        for metric_name, metric_value in test_metrics.items():
+            if metric_name not in heatmap_dict:
+                heatmap_dict[metric_name] = {}
+            sigma_t_1_str = str(args.sigma_t_1).replace('.', 'dot')
+            sigma_s_1_str = str(args.sigma_s_1).replace('.', 'dot')
+            heatmap_dict[metric_name][(sigma_t_1_str, sigma_s_1_str)] = metric_value
+
+        with open(heatmap_file_path, 'w') as json_file:
+            json.dump(heatmap_dict, json_file, indent=4)
+
         torch.cuda.empty_cache()
+
+        
+
+        

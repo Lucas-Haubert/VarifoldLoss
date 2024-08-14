@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=H_720_SegRNN_traffic_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_2_lr_0dot00001
+#SBATCH --job-name=Tuning_DILATE_SegRNN_Exchange_alpha
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpua100
+#SBATCH --partition=gpu
 
 # Module load
 module load anaconda3/2021.05/gcc-9.2.0
@@ -15,6 +15,9 @@ source activate flexforecast
 
 # Choose the model
 model_name=SegRNN
+
+
+
 
 
 # For Tuesday meeting
@@ -92,7 +95,7 @@ model_name=SegRNN
 #   --is_training 1 \
 #   --root_path ./dataset/traffic/ \
 #   --data_path traffic.csv \
-#   --model_id H_336_SegRNN_traffic_MSE_B_32_lr_0dot0001 \
+#   --model_id Traffic_SegRNN_MSE_d_model_512_B_32_lr_0dot001 \
 #   --model $model_name \
 #   --loss 'MSE' \
 #   --train_epochs 20 \
@@ -100,7 +103,7 @@ model_name=SegRNN
 #   --data custom \
 #   --features M \
 #   --seq_len 96 \
-#   --pred_len 336 \
+#   --pred_len 96 \
 #   --seg_len 24 \
 #   --e_layers 2 \
 #   --enc_in 862 \
@@ -142,37 +145,41 @@ model_name=SegRNN
 #   --learning_rate 0.001 \
 #   --itr 1
 
-# SegRNN - traffic - VARIFOLD
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/traffic/ \
-  --data_path traffic.csv \
-  --model_id H_720_SegRNN_traffic_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_2_lr_0dot00001 \
-  --model $model_name \
-  --loss 'VARIFOLD' \
-  --or_kernel 'Gaussian' \
-  --sigma_t_1 1 \
-  --sigma_t_2 1 \
-  --sigma_s_1 14.7 \
-  --sigma_s_2 14.7 \
-  --train_epochs 20 \
-  --patience 5 \
-  --data custom \
-  --features M \
-  --seq_len 96 \
-  --pred_len 720 \
-  --seg_len 24 \
-  --e_layers 2 \
-  --enc_in 862 \
-  --dec_in 7 \
-  --c_out 7 \
-  --des 'Exp' \
-  --d_model 512 \
-  --d_ff 2048 \
-  --dropout 0 \
-  --batch_size 2 \
-  --learning_rate 0.00001 \
-  --itr 1
+# SegRNN - traffic - VARIFOLD.
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/traffic/ \
+#   --data_path traffic.csv \
+#   --model_id Traffic_SegRNN_VAR_Sum_current_2_sqrt_2_0dot5sqrt_B_32_lr_0dot001 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Sum_Kernels_Current' \
+#   --sigma_t_1_big 2 \
+#   --sigma_t_2_big 2 \
+#   --sigma_s_1_big 29.4 \
+#   --sigma_s_2_big 29.4\
+#   --sigma_t_1_little 1 \
+#   --sigma_t_2_little 1 \
+#   --sigma_s_1_little 14.7 \
+#   --sigma_s_2_little 14.7 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --seg_len 24 \
+#   --e_layers 2 \
+#   --enc_in 862 \
+#   --dec_in 7 \
+#   --c_out 7 \
+#   --des 'Exp' \
+#   --d_model 512 \
+#   --d_ff 2048 \
+#   --dropout 0 \
+#   --batch_size 32 \
+#   --learning_rate 0.001 \
+#   --itr 1
 
 
 

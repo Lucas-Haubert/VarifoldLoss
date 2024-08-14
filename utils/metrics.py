@@ -273,16 +273,27 @@ def rSE(series_pred, series_ground):
     return metric
 
 
+# def compute_metrics(pred, true):
+    
+#     metrics = {
+#             'MSE': MSE(pred, true),
+#             'MAE': MAE(pred, true),
+#             'DTW': DTW(pred, true),
+#             'rFFT_low': rFFT(pred, true, frequency_range=(0, 0.02)),
+#             'rFFT_mid': rFFT(pred, true, frequency_range=(0.02, 0.15)),
+#             'rFFT_high': rFFT(pred, true, frequency_range=(0.15, 0.35)),
+#             'rSE': rSE(pred, true)
+#     }
+    
+#     return metrics
+
 def compute_metrics(pred, true):
     
     metrics = {
             'MSE': MSE(pred, true),
             'MAE': MAE(pred, true),
             'DTW': DTW(pred, true),
-            'rFFT_low': rFFT(pred, true, frequency_range=(0, 0.05)),
-            'rFFT_mid': rFFT(pred, true, frequency_range=(0.05, 0.25)),
-            'rFFT_high': rFFT(pred, true, frequency_range=(0.25, 0.5)),
-            'rSE': rSE(pred, true)
+            'TDI': TDI(pred, true)
     }
     
     return metrics

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=plot_batches
+#SBATCH --job-name=Tuning_DILATE_DLinear_Weather_alpha
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -15,6 +15,43 @@ source activate flexforecast
 
 # Choose the model
 model_name=DLinear
+
+alpha_dilate_list=(0.6 0.7 0.8)
+
+
+for alpha_dilate in "${alpha_dilate_list[@]}"
+do
+    
+    alpha_dilate_name=$(echo $alpha_dilate | tr '.' 'dot')
+    
+    model_name_str="Tuning_DILATE_DLinear_Weather_alpha_${alpha_dilate}_d_model_512_B_32_lr_10e-4"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/weather/ \
+        --data_path weather.csv \
+        --model_id $model_name_str \
+        --model $model_name \
+        --loss 'DILATE' \
+        --alpha_dilate $alpha_dilate \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features M \
+        --seq_len 144 \
+        --pred_len 72 \
+        --e_layers 2 \
+        --d_layers 1 \
+        --factor 3 \
+        --enc_in 21 \
+        --dec_in 21 \
+        --c_out 21 \
+        --des 'Exp' \
+        --batch_size 32 \
+        --learning_rate 0.0001 \
+        --itr 3
+
+done
 
 
 # traffic
@@ -186,28 +223,28 @@ model_name=DLinear
 # # exchange_rate
 
 # DLinear - exchange_rate - MSE
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/exchange_rate/ \
-  --data_path exchange_rate.csv \
-  --model_id TUESDAY_MEETING_DLinear_exchange_rate_MSE_B_32_lr_0dot0001 \
-  --model $model_name \
-  --loss 'MSE' \
-  --train_epochs 20 \
-  --patience 5 \
-  --data custom \
-  --features M \
-  --seq_len 96 \
-  --pred_len 96 \
-  --factor 3 \
-  --e_layers 2 \
-  --enc_in 8 \
-  --dec_in 8 \
-  --c_out 8 \
-  --des 'Exp' \
-  --batch_size 32 \
-  --learning_rate 0.0001 \
-  --itr 1
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/exchange_rate/ \
+#   --data_path exchange_rate.csv \
+#   --model_id TUESDAY_MEETING_DLinear_exchange_rate_MSE_B_32_lr_0dot0001 \
+#   --model $model_name \
+#   --loss 'MSE' \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --factor 3 \
+#   --e_layers 2 \
+#   --enc_in 8 \
+#   --dec_in 8 \
+#   --c_out 8 \
+#   --des 'Exp' \
+#   --batch_size 32 \
+#   --learning_rate 0.0001 \
+#   --itr 1
 
 # # DLinear - exchange_rate - DILATE_1
 # python -u run.py \

@@ -19,7 +19,8 @@ class ConvNet(nn.Module):
                 )
                 
         # self.layer2 = nn.Sequential(
-        #         nn.Conv1d(64, 128, kernel_size=self.kernel_size, padding=self.padding),
+        #         #nn.Conv1d(64, 128, kernel_size=self.kernel_size, padding=self.padding),
+        #         nn.Conv1d(64, 128, kernel_size=5, padding=2),
         #         nn.BatchNorm1d(128),
         #         nn.ReLU()
         #         )

@@ -65,7 +65,7 @@ def compute_softdtw_backward(D_, R, gamma):
 
 class SoftDTWBatch(Function):
     @staticmethod
-    def forward(ctx, D, gamma = 1.0): # D.shape: [batch_size, N , N]
+    def forward(ctx, D, gamma = 0.01): # D.shape: [batch_size, N , N] # gamma = 1.0 by default in the original code
         dev = D.device
         batch_size,N,N = D.shape
         gamma = torch.FloatTensor([gamma]).to(dev)

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=increase_H_bis_96_LSTM_VARIFOLD_1st_version_d_model_1024_B_4_lr_10e-4
+#SBATCH --job-name=Synth_2_SNR_15_raw_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -17,12 +17,16 @@ source activate flexforecast
 model_name=LSTM
 
 
-# LSTM - increase_H - MSE - Config 1
+
+
+# # SNR datasets, LSTM, Config 1
+
+# # LSTM - SNR - MSE
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/synthetic/ \
-#   --data_path increase_H_bis.csv \
-#   --model_id increase_H_bis_96_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
+#   --data_path Synth_2_SNR_15.csv \
+#   --model_id Synth_2_SNR_15_raw_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
 #   --model $model_name \
 #   --loss 'MSE' \
 #   --train_epochs 20 \
@@ -38,22 +42,22 @@ model_name=LSTM
 #   --d_model 1024 \
 #   --batch_size 4 \
 #   --learning_rate 0.0001 \
-#   --itr 5
+#   --itr 1
 
 
-# # LSTM - increase_H - VARIFOLD - Config 1
+# # LSTM - SNR - VARIFOLD_1st_version
 python -u run.py \
   --is_training 1 \
   --root_path ./dataset/synthetic/ \
-  --data_path increase_H.csv \
-  --model_id increase_H_bis_96_LSTM_VARIFOLD_1st_version_d_model_1024_B_4_lr_10e-4 \
+  --data_path Synth_2_SNR_15.csv \
+  --model_id Synth_2_SNR_15_raw_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4 \
   --model $model_name \
   --loss 'VARIFOLD' \
-  --or_kernel 'Gaussian' \
+  --or_kernel 'PosOnly' \
   --sigma_t_1 1 \
   --sigma_t_2 1 \
-  --sigma_s_1 0.5 \
-  --sigma_s_2 0.5 \
+  --sigma_s_1 1 \
+  --sigma_s_2 1 \
   --train_epochs 20 \
   --patience 5 \
   --data custom \
@@ -67,7 +71,151 @@ python -u run.py \
   --d_model 1024 \
   --batch_size 4 \
   --learning_rate 0.0001 \
-  --itr 5
+  --itr 1
+
+# # LSTM - SNR - VARIFOLD sum kernel
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path SNR_5.csv \
+#   --model_id updated_metrics_SNR_5_LSTM_VARIFOLD_sum_kernel_d_model_1024_B_4_lr_10e-4 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Sum_Kernels' \
+#   --sigma_t_1_little 1 \
+#   --sigma_t_2_little 1 \
+#   --sigma_s_1_little 0.5 \
+#   --sigma_s_2_little 0.5 \
+#   --sigma_t_1_big 2 \
+#   --sigma_t_2_big 2 \
+#   --sigma_s_1_big 1 \
+#   --sigma_s_2_big 1 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 2 \
+#   --enc_in 1 \
+#   --des 'Exp' \
+#   --d_model 1024 \
+#   --batch_size 4 \
+#   --learning_rate 0.0001 \
+#   --itr 1
+
+
+
+
+# # SNR datasets, LSTM, Config 2
+
+# # LSTM - SNR - MSE
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path Synth_3_SNR_15.csv \
+#   --structural_data_path Synth_3_SNR_infty.csv \
+#   --evaluation_mode 'structural' \
+#   --model_id Synth_3_SNR_15_structural_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
+#   --model $model_name \
+#   --loss 'MSE' \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 2 \
+#   --enc_in 1 \
+#   --des 'Exp' \
+#   --d_model 1024 \
+#   --batch_size 4 \
+#   --learning_rate 0.0001 \
+#   --itr 1
+
+# # LSTM - SNR - VARIFOLD_1st_version
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path Synth_3_SNR_15.csv \
+#   --structural_data_path Synth_3_SNR_infty.csv \
+#   --evaluation_mode 'structural' \
+#   --model_id Synth_3_SNR_15_structural_LSTM_VAR_Gaussian_1_1_1_1_d_model_1024_B_4_lr_10e-4 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Gaussian' \
+#   --sigma_t_1 1 \
+#   --sigma_s_1 1 \
+#   --sigma_t_2 1 \
+#   --sigma_s_2 1 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 2 \
+#   --enc_in 1 \
+#   --des 'Exp' \
+#   --d_model 1024 \
+#   --batch_size 4 \
+#   --learning_rate 0.0001 \
+#   --itr 1
+
+# # LSTM - SNR - VARIFOLD_1st_version
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path SNR_5.csv \
+#   --structural_data_path SNR_infty.csv \
+#   --evaluation_mode 'structural' \
+#   --model_id updated_metrics_SNR_5_structural_LSTM_VARIFOLD_sum_kernel_d_model_1024_B_4_lr_10e-4 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Sum_Kernels' \
+#   --sigma_t_1_little 1 \
+#   --sigma_t_2_little 1 \
+#   --sigma_s_1_little 0.5 \
+#   --sigma_s_2_little 0.5 \
+#   --sigma_t_1_big 2 \
+#   --sigma_t_2_big 2 \
+#   --sigma_s_1_big 1 \
+#   --sigma_s_2_big 1 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 2 \
+#   --enc_in 1 \
+#   --des 'Exp' \
+#   --d_model 1024 \
+#   --batch_size 4 \
+#   --learning_rate 0.0001 \
+#   --itr 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -118,72 +266,12 @@ python -u run.py \
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # SNR datasets, LSTM, Config 1
-
-# # LSTM - SNR - MSE
+# LSTM - increase_H - MSE - Config 1
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/synthetic/ \
-#   --data_path SNR_5.csv \
-#   --model_id SNR_5_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
+#   --data_path increase_H_bis.csv \
+#   --model_id increase_H_bis_96_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
 #   --model $model_name \
 #   --loss 'MSE' \
 #   --train_epochs 20 \
@@ -202,12 +290,12 @@ python -u run.py \
 #   --itr 5
 
 
-# # LSTM - SNR - VARIFOLD_1st_version
+# # LSTM - increase_H - VARIFOLD - Config 1
 # python -u run.py \
 #   --is_training 1 \
 #   --root_path ./dataset/synthetic/ \
-#   --data_path SNR_5.csv \
-#   --model_id SNR_5_LSTM_VARIFOLD_1st_version_d_model_1024_B_4_lr_10e-4 \
+#   --data_path increase_H.csv \
+#   --model_id increase_H_bis_96_LSTM_VARIFOLD_1st_version_d_model_1024_B_4_lr_10e-4 \
 #   --model $model_name \
 #   --loss 'VARIFOLD' \
 #   --or_kernel 'Gaussian' \
@@ -229,67 +317,6 @@ python -u run.py \
 #   --batch_size 4 \
 #   --learning_rate 0.0001 \
 #   --itr 5
-
-
-
-
-# # SNR datasets, LSTM, Config 2
-
-# # LSTM - SNR - MSE
-# python -u run.py \
-#   --is_training 1 \
-#   --root_path ./dataset/synthetic/ \
-#   --data_path SNR_5.csv \
-#   --structural_data_path SNR_infty.csv \
-#   --evaluation_mode 'structural' \
-#   --model_id SNR_5_structural_LSTM_MSE_d_model_1024_B_4_lr_10e-4 \
-#   --model $model_name \
-#   --loss 'MSE' \
-#   --train_epochs 20 \
-#   --patience 5 \
-#   --data custom \
-#   --features S \
-#   --target value \
-#   --seq_len 96 \
-#   --pred_len 96 \
-#   --e_layers 2 \
-#   --enc_in 1 \
-#   --des 'Exp' \
-#   --d_model 1024 \
-#   --batch_size 4 \
-#   --learning_rate 0.0001 \
-#   --itr 5
-
-# # LSTM - SNR - VARIFOLD_1st_version
-# python -u run.py \
-#   --is_training 1 \
-#   --root_path ./dataset/synthetic/ \
-#   --data_path SNR_5.csv \
-#   --structural_data_path SNR_infty.csv \
-#   --evaluation_mode 'structural' \
-#   --model_id SNR_5_structural_LSTM_VARIFOLD_1st_version_d_model_1024_B_4_lr_10e-4 \
-#   --model $model_name \
-#   --loss 'VARIFOLD' \
-#   --or_kernel 'Gaussian' \
-#   --sigma_t_1 1 \
-#   --sigma_t_2 1 \
-#   --sigma_s_1 0.5 \
-#   --sigma_s_2 0.5 \
-#   --train_epochs 20 \
-#   --patience 5 \
-#   --data custom \
-#   --features S \
-#   --target value \
-#   --seq_len 96 \
-#   --pred_len 96 \
-#   --e_layers 2 \
-#   --enc_in 1 \
-#   --des 'Exp' \
-#   --d_model 1024 \
-#   --batch_size 4 \
-#   --learning_rate 0.0001 \
-#   --itr 5
-
 
 
 

@@ -1,5 +1,50 @@
 import torch
 
+def TSCauchyKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. 
+    # If the signal has N dimension n_dim should be N+1.
+    sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
+    sigmas[0,0,0] /= sigma_t
+    sigmas[0,0,1:] /= sigma_s
+
+    def K(bx, by):
+        # Calculating the Cauchy kernel
+        diffs = sigmas * bx[:, :, None, :] - sigmas * by[:, None, :, :]
+        squared_diffs = torch.sum(diffs ** 2, dim=-1)
+        return 1 / (1 + squared_diffs)
+
+    return K
+def TSCauchyCurrentKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    K2 = TSCurrent(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)*K2(u,v)
+    return K
+
+def TSCauchyPosOnlyKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)
+    return K
+
+def TSCauchyDotProductKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    K2 = TSDotKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)*K2(u,v)
+    return K
+
+def TSCauchyGaussianKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    K2 = TSGaussKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)*K2(u,v)
+    return K
+
 def TSGaussKernel(sigma_t,sigma_s,n_dim,dtype = torch.float,device = "cpu"):
     # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
     sigmas = torch.ones((1,1,n_dim),dtype = dtype, device = device)
@@ -16,6 +61,30 @@ def TSGaussGaussKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = tor
         return K1(x,y)*K2(u,v)
     return K
 
+def TSGaussGaussKernelSum(sigma_t_1_little, sigma_s_1_little, sigma_t_2_little, sigma_s_2_little, 
+                          sigma_t_1_big, sigma_s_1_big, sigma_t_2_big, sigma_s_2_big,
+                          n_dim, dtype = torch.float, device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1_little = TSGaussKernel(sigma_t_1_little, sigma_s_1_little, n_dim=n_dim, dtype=dtype, device=device)
+    K1_big = TSGaussKernel(sigma_t_1_big, sigma_s_1_big, n_dim=n_dim, dtype=dtype, device=device)
+    K2_little = TSGaussKernel(sigma_t_2_little, sigma_s_2_little, n_dim=n_dim, dtype=dtype, device=device)
+    K2_big = TSGaussKernel(sigma_t_2_big, sigma_s_2_big, n_dim=n_dim, dtype=dtype, device=device)
+    def K(x,y,u,v):
+        return 0.25*(K1_little(x,y) + K1_big(x,y))*(K2_little(u,v) + K2_big(u,v)) # 0.25 because the summing weights are 0.5
+    return K
+
+def TSGaussCurrentKernelSum(sigma_t_1_little, sigma_s_1_little, sigma_t_2_little, sigma_s_2_little, 
+                          sigma_t_1_big, sigma_s_1_big, sigma_t_2_big, sigma_s_2_big,
+                          n_dim, dtype = torch.float, device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
+    K1_little = TSGaussKernel(sigma_t_1_little, sigma_s_1_little, n_dim=n_dim, dtype=dtype, device=device)
+    K1_big = TSGaussKernel(sigma_t_1_big, sigma_s_1_big, n_dim=n_dim, dtype=dtype, device=device)
+    K2_little = TSCurrent(sigma_t_2_little, sigma_s_2_little, n_dim=n_dim, dtype=dtype, device=device)
+    K2_big = TSCurrent(sigma_t_2_big, sigma_s_2_big, n_dim=n_dim, dtype=dtype, device=device)
+    def K(x,y,u,v):
+        return 0.25*(K1_little(x,y) + K1_big(x,y))*(K2_little(u,v) + K2_big(u,v)) # 0.25 because the summing weights are 0.5
+    return K
+
 def TSDotKernel(sigma_t,sigma_s,n_dim,dtype = torch.float,device = "cpu"):
     sigmas = torch.ones((1,1,n_dim),dtype = dtype, device = device)
     sigmas[0,0,0] /= sigma_t
@@ -29,6 +98,28 @@ def TSGaussDotKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch
     K2 = TSDotKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
     def K(x,y,u,v):
         return K1(x,y)*K2(u,v)
+    return K
+
+def TSCurrent(sigma_t,sigma_s,n_dim,dtype = torch.float,device = "cpu"):
+    sigmas = torch.ones((1,1,n_dim),dtype = dtype, device = device)
+    sigmas[0,0,0] /= sigma_t
+    sigmas[0,0,1:] /= sigma_s
+    def K(bx,by):
+        return torch.sum(((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]),axis=-1)
+    return K
+def TSGaussCurrent(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
+    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    K2 = TSCurrent(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)*K2(u,v)
+    return K
+
+def TSGaussPosOnly(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
+    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
+    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+    def K(x,y,u,v):
+        return K1(x,y)
     return K
     
 def time_embed(bx, device="cpu"):
