@@ -239,8 +239,7 @@ if __name__ == '__main__':
             end_testing = time.time()
             print("Testing: {} seconds".format(end_testing - start_testing))
 
-            if args.evaluation_mode == 'raw':
-                vali_metrics = exp.test_on_vali(setting, test=1)
+            vali_metrics = exp.test_on_vali(setting, test=1)
 
             if args.do_predict:
                 print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))

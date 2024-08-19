@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=Heatmaps_Synth_3_SNR_15_structural_MLP_VAR_PosOnly
+#SBATCH --job-name=August_18_different_SNR_Synth_3_structural_MLP_MSE_d_model_1024_B_4_lr_10e-4
 #SBATCH --output=slurm_outputs/%x.job_%j
-#SBATCH --time=03:00:00
+#SBATCH --time=24:00:00
 #SBATCH --ntasks=4 
 #SBATCH --gres=gpu:1 
 #SBATCH --partition=gpu
@@ -16,6 +16,76 @@ source activate flexforecast
 
 # Choose the model
 model_name=MLP
+
+
+
+snr_values=(5 10 15 20)
+
+for snr in "${snr_values[@]}"
+do
+    
+    model_name_str="August_18_SNR_${snr}_Synth_3_structural_MLP_MSE_d_model_1024_B_4_lr_10e-4"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Synth_3_SNR_${snr}.csv \
+        --structural_data_path Synth_3_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --model_id $model_name_str \
+        --model $model_name \
+        --loss 'MSE' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --enc_in 1 \
+        --des 'Exp' \
+        --d_model 1024 \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 5
+
+done
+
+
+# for snr in "${snr_values[@]}"
+# do
+    
+#     model_name_str="August_18_SNR_${snr}_Synth_3_structural_MLP_VAR_Gaussian_1_1_1_1_d_model_1024_B_4_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Synth_3_SNR_${snr}.csv \
+#         --structural_data_path Synth_3_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --or_kernel 'Gaussian' \
+#         --sigma_t_1 1 \
+#         --sigma_s_1 1 \
+#         --sigma_t_2 1 \
+#         --sigma_s_2 1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 1024 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
 
 
 
@@ -163,49 +233,49 @@ model_name=MLP
 #   --itr 1
 
 
-sigma_values=(0.25 0.40 0.55 0.70 0.85 1 1.15 1.30 1.45 1.60 1.75)
+# sigma_values=(0.25 0.40 0.55 0.70 0.85 1 1.15 1.30 1.45 1.60 1.75)
 
-for sigma_t_1 in "${sigma_values[@]}"
-do
-    for sigma_s_1 in "${sigma_values[@]}"
-    do
+# for sigma_t_1 in "${sigma_values[@]}"
+# do
+#     for sigma_s_1 in "${sigma_values[@]}"
+#     do
         
-        sigma_t_1_name=$(echo $sigma_t_1 | tr '.' 'dot')
-        sigma_s_1_name=$(echo $sigma_s_1 | tr '.' 'dot')
+#         sigma_t_1_name=$(echo $sigma_t_1 | tr '.' 'dot')
+#         sigma_s_1_name=$(echo $sigma_s_1 | tr '.' 'dot')
         
-        model_name_str="Heatmaps_Synth_3_SNR_15_structural_MLP_VAR_PosOnly_${sigma_t_1_name}_${sigma_s_1_name}_1_1_d_model_1024_B_4_lr_10e-4"
+#         model_name_str="Heatmaps_Synth_3_SNR_15_structural_MLP_VAR_PosOnly_${sigma_t_1_name}_${sigma_s_1_name}_1_1_d_model_1024_B_4_lr_10e-4"
         
-        python -u run.py \
-            --is_training 0 \
-            --root_path ./dataset/synthetic/ \
-            --data_path Synth_3_SNR_15.csv \
-            --structural_data_path Synth_3_SNR_infty.csv \
-            --evaluation_mode 'structural' \
-            --model_id $model_name_str \
-            --model $model_name \
-            --heatmaps_base_name 'Heatmaps_Synth_3_SNR_15_structural_MLP_VAR_PosOnly' \
-            --loss 'VARIFOLD' \
-            --or_kernel 'PosOnly' \
-            --sigma_t_1 $sigma_t_1 \
-            --sigma_s_1 $sigma_s_1 \
-            --sigma_t_2 1 \
-            --sigma_s_2 1 \
-            --train_epochs 20 \
-            --patience 5 \
-            --data custom \
-            --features S \
-            --target value \
-            --seq_len 96 \
-            --pred_len 96 \
-            --enc_in 1 \
-            --des 'Exp' \
-            --d_model 1024 \
-            --batch_size 4 \
-            --learning_rate 0.0001 \
-            --itr 1
+#         python -u run.py \
+#             --is_training 0 \
+#             --root_path ./dataset/synthetic/ \
+#             --data_path Synth_3_SNR_15.csv \
+#             --structural_data_path Synth_3_SNR_infty.csv \
+#             --evaluation_mode 'structural' \
+#             --model_id $model_name_str \
+#             --model $model_name \
+#             --heatmaps_base_name 'Heatmaps_Synth_3_SNR_15_structural_MLP_VAR_PosOnly' \
+#             --loss 'VARIFOLD' \
+#             --or_kernel 'PosOnly' \
+#             --sigma_t_1 $sigma_t_1 \
+#             --sigma_s_1 $sigma_s_1 \
+#             --sigma_t_2 1 \
+#             --sigma_s_2 1 \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target value \
+#             --seq_len 96 \
+#             --pred_len 96 \
+#             --enc_in 1 \
+#             --des 'Exp' \
+#             --d_model 1024 \
+#             --batch_size 4 \
+#             --learning_rate 0.0001 \
+#             --itr 1
 
-    done
-done
+#     done
+# done
 
 
 # # MLP - SNR - VARIFOLD sum kernels

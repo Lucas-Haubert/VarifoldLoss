@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Synth_2_SNR_15_raw_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4
+#SBATCH --job-name=August_18_different_SNR_Synth_3_structural_LSTM_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -15,6 +15,81 @@ source activate flexforecast
 
 # Choose the model
 model_name=LSTM
+
+
+
+snr_values=(5 10 15 20)
+
+# for snr in "${snr_values[@]}"
+# do
+    
+#     model_name_str="August_18_SNR_${snr}_Synth_3_structural_LSTM_MSE_d_model_1024_B_4_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Synth_3_SNR_${snr}.csv \
+#         --structural_data_path Synth_3_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --e_layers 2 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 1024 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
+
+
+for snr in "${snr_values[@]}"
+do
+    
+    model_name_str="August_18_SNR_${snr}_Synth_3_structural_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Synth_3_SNR_${snr}.csv \
+        --structural_data_path Synth_3_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --model_id $model_name_str \
+        --model $model_name \
+        --loss 'VARIFOLD' \
+        --or_kernel 'PosOnly' \
+        --sigma_t_1 1 \
+        --sigma_s_1 1 \
+        --sigma_t_2 1 \
+        --sigma_s_2 1 \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --e_layers 2 \
+        --enc_in 1 \
+        --des 'Exp' \
+        --d_model 1024 \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 5
+
+done
+
+
+
 
 
 
@@ -46,32 +121,32 @@ model_name=LSTM
 
 
 # # LSTM - SNR - VARIFOLD_1st_version
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/synthetic/ \
-  --data_path Synth_2_SNR_15.csv \
-  --model_id Synth_2_SNR_15_raw_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4 \
-  --model $model_name \
-  --loss 'VARIFOLD' \
-  --or_kernel 'PosOnly' \
-  --sigma_t_1 1 \
-  --sigma_t_2 1 \
-  --sigma_s_1 1 \
-  --sigma_s_2 1 \
-  --train_epochs 20 \
-  --patience 5 \
-  --data custom \
-  --features S \
-  --target value \
-  --seq_len 96 \
-  --pred_len 96 \
-  --e_layers 2 \
-  --enc_in 1 \
-  --des 'Exp' \
-  --d_model 1024 \
-  --batch_size 4 \
-  --learning_rate 0.0001 \
-  --itr 1
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/synthetic/ \
+#   --data_path Synth_2_SNR_15.csv \
+#   --model_id Synth_2_SNR_15_raw_LSTM_VAR_PosOnly_1_1_1_1_d_model_1024_B_4_lr_10e-4 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'PosOnly' \
+#   --sigma_t_1 1 \
+#   --sigma_t_2 1 \
+#   --sigma_s_1 1 \
+#   --sigma_s_2 1 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features S \
+#   --target value \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --e_layers 2 \
+#   --enc_in 1 \
+#   --des 'Exp' \
+#   --d_model 1024 \
+#   --batch_size 4 \
+#   --learning_rate 0.0001 \
+#   --itr 1
 
 # # LSTM - SNR - VARIFOLD sum kernel
 # python -u run.py \

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Tuning_DILATE_DLinear_Weather_alpha
+#SBATCH --job-name=Tuning_DILATE_DLinear_ETTm1_MSE_horizon
 #SBATCH --output=slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -16,42 +16,201 @@ source activate flexforecast
 # Choose the model
 model_name=DLinear
 
-alpha_dilate_list=(0.6 0.7 0.8)
 
+horizon_list=(12 24 48 96)
 
-for alpha_dilate in "${alpha_dilate_list[@]}"
+for horizon in "${horizon_list[@]}"
 do
     
-    alpha_dilate_name=$(echo $alpha_dilate | tr '.' 'dot')
-    
-    model_name_str="Tuning_DILATE_DLinear_Weather_alpha_${alpha_dilate}_d_model_512_B_32_lr_10e-4"
+    model_name_str="Tuning_DILATE_DLinear_ETTm1_MSE_horizon_${horizon}_d_model_512_B_32_lr_10e-4"
     
     python -u run.py \
         --is_training 1 \
-        --root_path ./dataset/weather/ \
-        --data_path weather.csv \
+        --root_path ./dataset/ETT-small/ \
+        --data_path ETTm1.csv \
         --model_id $model_name_str \
         --model $model_name \
-        --loss 'DILATE' \
-        --alpha_dilate $alpha_dilate \
+        --loss 'MSE' \
         --train_epochs 20 \
         --patience 5 \
         --data custom \
         --features M \
-        --seq_len 144 \
-        --pred_len 72 \
+        --seq_len 96 \
+        --pred_len $horizon \
         --e_layers 2 \
         --d_layers 1 \
         --factor 3 \
-        --enc_in 21 \
-        --dec_in 21 \
-        --c_out 21 \
+        --enc_in 7 \
+        --dec_in 7 \
+        --c_out 7 \
         --des 'Exp' \
         --batch_size 32 \
         --learning_rate 0.0001 \
-        --itr 3
+        --itr 5
 
 done
+
+# for horizon in "${horizon_list[@]}"
+# do
+    
+#     model_name_str="Tuning_DILATE_DLinear_Exchange_MSE_horizon_${horizon}_d_model_512_B_32_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/exchange_rate/ \
+#         --data_path exchange_rate.csv \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features M \
+#         --seq_len 96 \
+#         --pred_len $horizon \
+#         --e_layers 2 \
+#         --d_layers 1 \
+#         --factor 3 \
+#         --enc_in 8 \
+#         --dec_in 8 \
+#         --c_out 8 \
+#         --des 'Exp' \
+#         --batch_size 32 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
+
+# for horizon in "${horizon_list[@]}"
+# do
+    
+#     model_name_str="Tuning_DILATE_DLinear_Electricity_MSE_horizon_${horizon}_d_model_512_B_32_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/electricity/ \
+#         --data_path electricity.csv \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features M \
+#         --seq_len 96 \
+#         --pred_len $horizon \
+#         --e_layers 2 \
+#         --d_layers 1 \
+#         --factor 3 \
+#         --enc_in 321 \
+#         --dec_in 321 \
+#         --c_out 321 \
+#         --des 'Exp' \
+#         --batch_size 32 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
+
+# for horizon in "${horizon_list[@]}"
+# do
+    
+#     model_name_str="Tuning_DILATE_DLinear_Traffic_MSE_horizon_${horizon}_d_model_512_B_16_lr_10e-3"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/traffic/ \
+#         --data_path traffic.csv \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features M \
+#         --seq_len 96 \
+#         --pred_len $horizon \
+#         --e_layers 2 \
+#         --d_layers 1 \
+#         --factor 3 \
+#         --enc_in 862 \
+#         --dec_in 862 \
+#         --c_out 862 \
+#         --des 'Exp' \
+#         --batch_size 16 \
+#         --learning_rate 0.001 \
+#         --itr 5
+
+# done
+
+# for horizon in "${horizon_list[@]}"
+# do
+    
+#     model_name_str="Tuning_DILATE_DLinear_Weather_MSE_horizon_${horizon}_d_model_512_B_32_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/weather/ \
+#         --data_path weather.csv \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features M \
+#         --seq_len 96 \
+#         --pred_len $horizon \
+#         --e_layers 2 \
+#         --d_layers 1 \
+#         --factor 3 \
+#         --enc_in 21 \
+#         --dec_in 21 \
+#         --c_out 21 \
+#         --des 'Exp' \
+#         --batch_size 32 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
+
+
+# alpha_dilate_list=(0.6 0.7 0.8)
+
+
+# for alpha_dilate in "${alpha_dilate_list[@]}"
+# do
+    
+#     alpha_dilate_name=$(echo $alpha_dilate | tr '.' 'dot')
+    
+#     model_name_str="Tuning_DILATE_DLinear_Weather_alpha_${alpha_dilate}_d_model_512_B_32_lr_10e-4"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/weather/ \
+#         --data_path weather.csv \
+#         --model_id $model_name_str \
+#         --model $model_name \
+#         --loss 'DILATE' \
+#         --alpha_dilate $alpha_dilate \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features M \
+#         --seq_len 144 \
+#         --pred_len 72 \
+#         --e_layers 2 \
+#         --d_layers 1 \
+#         --factor 3 \
+#         --enc_in 21 \
+#         --dec_in 21 \
+#         --c_out 21 \
+#         --des 'Exp' \
+#         --batch_size 32 \
+#         --learning_rate 0.0001 \
+#         --itr 3
+
+# done
 
 
 # traffic
