@@ -1,7 +1,3 @@
-from data_provider.data_factory import data_provider, data_provider_structural
-from experiments.exp_basic import Exp_Basic
-from utils.tools import EarlyStopping, adjust_learning_rate, visual
-from utils.metrics import compute_metrics
 import torch
 import torch.nn as nn
 from torch import optim
@@ -11,9 +7,14 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
+from data_provider.data_factory import data_provider, data_provider_structural
+from experiments.exp_basic import Exp_Basic
+from utils.tools import EarlyStopping, adjust_learning_rate, visual
+from utils.metrics import compute_metrics
+
 from loss.dilate.dilate_loss import DILATE
 from loss.tildeq import tildeq_loss
-from loss.varifold import VarifoldLoss, TSGaussGaussKernel, TSGaussDotKernel, TSGaussGaussKernelSum, TSGaussPosOnly, TSGaussCurrent, TSGaussCurrentKernelSum, TSCauchyCurrentKernel, TSCauchyPosOnlyKernel, TSCauchyDotProductKernel, TSCauchyGaussianKernel
+from loss.varifold import VarifoldLoss, OneKernel, TwoKernels
 
 warnings.filterwarnings('ignore')
 
@@ -28,11 +29,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         self.name_of_dataset = self.args.data_path
 
-        #self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
         self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI']
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
-        self.idx_best_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
-        self.idx_worst_prediction = {metric: {'val': 0, 'test': 0} for metric in self.list_of_metrics}
 
         self.gains_test_loss = []
         self.gains_test_metrics = {metric: [] for metric in self.list_of_metrics}
@@ -66,57 +64,23 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         elif self.args.loss == "TILDEQ":
             criterion = lambda x,y: tildeq_loss(x,y, alpha = self.args.alpha_tildeq)
         elif self.args.loss == "VARIFOLD":
-            if self.args.or_kernel == "Gaussian":
-                K = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "DotProduct":
-                K = TSGaussDotKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "Sum_Varif":
-                K_little = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_little, sigma_s_1 = self.args.sigma_s_1_kernel_little, sigma_t_2 = self.args.sigma_t_2_kernel_little, sigma_s_2 = self.args.sigma_s_2_kernel_little, n_dim = self.args.enc_in + 1, device=self.device)
-                K_big = TSGaussGaussKernel(sigma_t_1 = self.args.sigma_t_1_kernel_big, sigma_s_1 = self.args.sigma_s_1_kernel_big, sigma_t_2 = self.args.sigma_t_2_kernel_big, sigma_s_2 = self.args.sigma_s_2_kernel_big, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function_little = VarifoldLoss(K_little, device=self.device)
-                loss_function_big = VarifoldLoss(K_big, device=self.device)
-                criterion = lambda x,y: 0.5*loss_function_little(x,y) + 0.5*loss_function_big(x,y)
-            elif self.args.or_kernel == "Sum_Kernels_Gaussian":
-                K = TSGaussGaussKernelSum(sigma_t_1_little = self.args.sigma_t_1_little, sigma_s_1_little = self.args.sigma_s_1_little, sigma_t_2_little = self.args.sigma_t_2_little, sigma_s_2_little = self.args.sigma_s_2_little, 
-                                          sigma_t_1_big = self.args.sigma_t_1_big, sigma_s_1_big = self.args.sigma_s_1_big, sigma_t_2_big = self.args.sigma_t_2_big, sigma_s_2_big = self.args.sigma_s_2_big,
-                                          n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "Sum_Kernels_Current":
-                K = TSGaussCurrentKernelSum(sigma_t_1_little = self.args.sigma_t_1_little, sigma_s_1_little = self.args.sigma_s_1_little, sigma_t_2_little = self.args.sigma_t_2_little, sigma_s_2_little = self.args.sigma_s_2_little, 
-                                          sigma_t_1_big = self.args.sigma_t_1_big, sigma_s_1_big = self.args.sigma_s_1_big, sigma_t_2_big = self.args.sigma_t_2_big, sigma_s_2_big = self.args.sigma_s_2_big,
-                                          n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "Current":
-                K = TSGaussCurrent(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "PosOnly":
-                K = TSGaussPosOnly(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-        elif self.args.loss == "VARIFOLD_Cauchy":
-            if self.args.or_kernel == "Current":
-                K = TSCauchyCurrentKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "PosOnly":
-                K = TSCauchyPosOnlyKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "DotProduct":
-                K = TSCauchyDotProductKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
-            elif self.args.or_kernel == "Gaussian":
-                K = TSCauchyGaussianKernel(sigma_t_1 = self.args.sigma_t_1, sigma_s_1 = self.args.sigma_s_1, sigma_t_2 = self.args.sigma_t_2, sigma_s_2 = self.args.sigma_s_2, n_dim = self.args.enc_in + 1, device=self.device)
-                loss_function = VarifoldLoss(K, device=self.device)
-                criterion = lambda x,y: loss_function(x,y)
+            if self.args.number_of_kernels == 1:
+                K = OneKernel(position_kernel = self.args.position_kernel, orientation_kernel = self.args.orientation_kernel, 
+                              sigma_t_pos = self.args.sigma_t_pos, sigma_s_pos = self.args.sigma_s_pos, 
+                              sigma_t_or = self.args.sigma_t_or, sigma_s_or = self.args.sigma_s_or, 
+                              n_dim = self.args.enc_in + 1, device=self.device)
+            elif self.args.number_of_kernels == 2:
+                K = TwoKernels(position_kernel_little = self.args.position_kernel_little, orientation_kernel_little = self.args.orientation_kernel_little, 
+                               position_kernel_big = self.args.position_kernel_big, orientation_kernel_big = self.args.orientation_kernel_big, 
+                               sigma_t_pos_little = self.args.sigma_t_pos_little, sigma_s_pos_little = self.args.sigma_s_pos_little, 
+                               sigma_t_or_little = self.args.sigma_t_or_little, sigma_s_or_little = self.args.sigma_s_or_little, 
+                               sigma_t_pos_big = self.args.sigma_t_pos_big, sigma_s_pos_big = self.args.sigma_s_pos_big, 
+                               sigma_t_or_big = self.args.sigma_t_or_big, sigma_s_or_big = self.args.sigma_s_or_big, 
+                               weight_little = self.args.weight_little, weight_big = self.args.weight_big, 
+                               n_dim = self.args.enc_in + 1, device=self.device)
+        loss_function = VarifoldLoss(K, device=self.device)
+        criterion = lambda x,y: loss_function(x,y)
+
         return criterion
 
     def cumulative_computing_loss_metrics(self, dataloader, criterion):
@@ -284,107 +248,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         plt.title(f"Model: {self.args.model}, Loss: {self.args.loss}, Metric: {metric_name}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}", pad=20)
         plt.savefig(os.path.join(folder_path, f"Gains_for_Loss_{self.args.loss}_Metric_{metric_name}_over_epochs.png"))
 
-
-    def plot_best_worst_predictions(self, setting, category):
-
-        if category == 'best':
-            idx = self.idx_best_prediction
-        elif category == 'worst':
-            idx = self.idx_worst_prediction
-
-        for dataset in ['val', 'test']:
-
-            if dataset == 'test':
-                data, dataloader = self._get_data(flag='test')
-            elif dataset == 'val':
-                data, dataloader = self._get_data(flag='val') 
-                # Voir si je ne souffre pas du shuffle avec les indices
-                # pour le tester, comparer métrique attendue et métrique observée
-
-            for metric in self.list_of_metrics:
-
-                #self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
-                self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
-
-                #folder_path = './outputs/best_worst_predictions/' + category + '_' + metric + '_' + dataset + '/' + setting + '/'
-                folder_path = './new_outputs/best_worst_predictions/' + category + '_' + metric + '_' + dataset + '/' + setting + '/'
-                if not os.path.exists(folder_path):
-                    os.makedirs(folder_path)
-
-                self.model.eval()
-                with torch.no_grad():
-                    for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(dataloader):
-                        if i == idx[metric][dataset]:
-
-                            batch_x = batch_x.float().to(self.device)
-                            batch_y = batch_y.float().to(self.device)
-
-                            if 'PEMS' in self.args.data or 'Solar' in self.args.data:
-                                batch_x_mark = None
-                                batch_y_mark = None
-                            else:
-                                batch_x_mark = batch_x_mark.float().to(self.device)
-                                batch_y_mark = batch_y_mark.float().to(self.device)
-
-                            # decoder input
-                            dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                            dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                            # encoder - decoder
-                            if self.args.use_amp:
-                                with torch.cuda.amp.autocast():
-                                    if self.args.output_attention:
-                                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                                    else:
-                                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                            else:
-                                if self.args.output_attention:
-                                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-
-                                else:
-                                    outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-                            f_dim = -1 if self.args.features == 'MS' else 0
-                            outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                            batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                            outputs = outputs.detach().cpu().numpy()
-                            batch_y = batch_y.detach().cpu().numpy()
-                            if data.scale and self.args.inverse:
-                                shape = outputs.shape
-                                outputs = data.inverse_transform(outputs.squeeze(0)).reshape(shape)
-                                batch_y = data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
-
-                            pred = outputs
-                            true = batch_y
-
-                            metric_batch = compute_metrics(pred, true, self.name_of_dataset)[metric]
-
-                            # Ne pas oublier d'afficher la métrique
-
-                            input = batch_x.detach().cpu().numpy()
-                            if data.scale and self.args.inverse:
-                                shape = input.shape
-                                input = data.inverse_transform(input.squeeze(0)).reshape(shape)
-                            gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
-                            pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
-
-                            plt.figure(figsize=(10, 5))
-                            plt.plot(gt, color='darkblue', label='Ground Truth')
-                            plt.plot(pd, color='orange', label='Prediction')
-                            plt.plot(input[0, :, -1], color='blue', label='Observations')
-                            plt.legend()
-
-                            if category == 'best':
-                                title = f"Best prediction with metric {metric}, Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}"
-                            elif category == 'worst':
-                                title = f"Worst prediction with metric {metric}, Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path}"
-
-                            plt.title(title)
-                            
-                            plt.savefig(os.path.join(folder_path, str(i) + '.png'))
-                            plt.close()
-
-        return
-
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
@@ -531,17 +394,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             self.plot_losses_and_metrics(metric, setting)
             self.plot_gains_wrt_epochs(metric, setting)
         """
-
-        # for metric in self.list_of_metrics:
-
-        #     self.idx_best_prediction[metric]['val'] = vali_metrics_over_batches[metric].index(max(vali_metrics_over_batches[metric]))
-        #     self.idx_best_prediction[metric]['test'] = test_metrics_over_batches[metric].index(max(test_metrics_over_batches[metric]))
-
-        #     self.idx_worst_prediction[metric]['val'] = vali_metrics_over_batches[metric].index(min(vali_metrics_over_batches[metric]))
-        #     self.idx_worst_prediction[metric]['test'] = test_metrics_over_batches[metric].index(min(test_metrics_over_batches[metric]))
-
-        #self.plot_best_worst_predictions(setting, 'best')
-        #self.plot_best_worst_predictions(setting, 'worst')
     
         return self.model
 

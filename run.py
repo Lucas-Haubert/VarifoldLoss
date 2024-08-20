@@ -1,59 +1,26 @@
 import argparse
 import torch
-from experiments.exp_long_term_forecasting import Exp_Long_Term_Forecast
-from experiments.exp_long_term_forecasting_partial import Exp_Long_Term_Forecast_Partial
 import random
 import numpy as np
 import time
 import json
 import os
 
-# def compute_mean_median_std_metrics(metrics_list):
-#     metrics_array = np.array(metrics_list)
-#     mean_metrics = np.mean(metrics_array, axis=0)
-#     median_metrics = np.median(metrics_array, axis=0)
-#     std_metrics = np.std(metrics_array, axis=0)
-#     return mean_metrics, median_metrics, std_metrics
+from experiments.exp_long_term_forecasting import Exp_Long_Term_Forecast
+from utils.metrics import compute_mean_median_std_metrics
 
-def compute_mean_median_std_metrics(metrics_list):
-    # Extraire les noms des métriques à partir du premier dictionnaire
-    metric_names = metrics_list[0].keys()
-
-    # Initialiser des listes pour chaque métrique
-    aggregated_metrics = {metric: [] for metric in metric_names}
-
-    # Remplir les listes avec les valeurs de chaque métrique pour toutes les itérations
-    for metrics in metrics_list:
-        for metric in metric_names:
-            aggregated_metrics[metric].append(metrics[metric])
-
-    # Calculer les statistiques pour chaque métrique
-    mean_metrics = {metric: np.mean(aggregated_metrics[metric]) for metric in metric_names}
-    median_metrics = {metric: np.median(aggregated_metrics[metric]) for metric in metric_names}
-    std_metrics = {metric: np.std(aggregated_metrics[metric]) for metric in metric_names}
-
-    return mean_metrics, median_metrics, std_metrics
 
 if __name__ == '__main__':
-    # fix_seed = 2023
-    # random.seed(fix_seed)
-    # torch.manual_seed(fix_seed)
-    # np.random.seed(fix_seed)
 
-    seeds = [2023, 2024, 2025, 2026, 2027]  # Different seeds for each iteration
-    metrics_results = []
-    metrics_on_vali_results = []
-    heatmap_dict = {}
+    parser = argparse.ArgumentParser(description='Internship')
 
-    parser = argparse.ArgumentParser(description='iTransformer')
-
-    # basic config
+    # Base configuration
     parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='iTransformer',
-                        help='model name, options: [iTransformer, iInformer, iReformer, iFlowformer, iFlashformer]')
+                        help='model name, options: [MLP, LSTM, CNN, Transformer, iTransformer, SegRNN, TimesNet]')
 
-    # data loader
+    # Data loader
     parser.add_argument('--data', type=str, required=True, default='custom', help='dataset type')
     parser.add_argument('--root_path', type=str, default='./dataset/synthetic/', help='root path of the data file')
     parser.add_argument('--data_path', type=str, default='SNR_infty.csv', help='data csv file')
@@ -64,17 +31,17 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
     parser.add_argument('--freq', type=str, default='h',
                         help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-    #parser.add_argument('--checkpoints', type=str, default='./outputs/checkpoints/', help='location of model checkpoints')
+    parser.add_argument('--checkpoints', type=str, default='./outputs/checkpoints/', help='location of model checkpoints')
 
-    # forecasting task
+    # Observation and horizon
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
-    parser.add_argument('--label_len', type=int, default=48, help='start token length') # no longer needed in inverted Transformers
+    parser.add_argument('--label_len', type=int, default=48, help='start token length')
     parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
 
-    # model define
+    # Model hyperparameters
     parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')
     parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
-    parser.add_argument('--c_out', type=int, default=7, help='output size') # applicable on arbitrary number of variates in inverted Transformers
+    parser.add_argument('--c_out', type=int, default=7, help='output size')
     parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
     parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
     parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
@@ -92,7 +59,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
     parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 
-    # optimization
+    # Optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
     parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
@@ -109,38 +76,6 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=0, help='gpu')
     parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
-
-    # DILATE
-    parser.add_argument('--alpha_dilate', type=float, default=0.5, help='alpha in dilate loss')
-
-    # TILDE-Q
-    parser.add_argument('--alpha_tildeq', type=float, default=0.5)
-    parser.add_argument('--gamma_tildeq', type=float, default=0.01)
-
-    # VARIFOLD
-    parser.add_argument('--or_kernel', type=str, default="Gaussian")
-
-    parser.add_argument('--sigma_t_1', type=float, default=1)
-    parser.add_argument('--sigma_t_2', type=float, default=1)
-    parser.add_argument('--sigma_s_1', type=float, default=10)
-    parser.add_argument('--sigma_s_2', type=float, default=10)
-
-    parser.add_argument('--sigma_t_1_little', type=float, default=10)
-    parser.add_argument('--sigma_t_2_little', type=float, default=10)
-    parser.add_argument('--sigma_t_1_big', type=float, default=10)
-    parser.add_argument('--sigma_t_2_big', type=float, default=10)
-
-    parser.add_argument('--sigma_s_1_little', type=float, default=10)
-    parser.add_argument('--sigma_s_2_little', type=float, default=10)
-    parser.add_argument('--sigma_s_1_big', type=float, default=10)
-    parser.add_argument('--sigma_s_2_big', type=float, default=10)
-
-    parser.add_argument('--sigma_t_1_kernel_1', type=float, default=10)
-    parser.add_argument('--sigma_t_1_kernel_2', type=float, default=10)
-    parser.add_argument('--sigma_t_1_kernel_3', type=float, default=10)
-    parser.add_argument('--sigma_s_1_kernel_1', type=float, default=10)
-    parser.add_argument('--sigma_s_1_kernel_2', type=float, default=10)
-    parser.add_argument('--sigma_s_1_kernel_3', type=float, default=10)
 
     # TimesNet
     parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
@@ -167,8 +102,38 @@ if __name__ == '__main__':
     parser.add_argument('--partial_start_index', type=int, default=0, help='the start index of variates for partial training, '
                                                                            'you can select [partial_start_index, min(enc_in + partial_start_index, N)]')
 
+    # DILATE
+    parser.add_argument('--alpha_dilate', type=float, default=0.5, help='alpha in dilate loss')
+
+    # TILDE-Q
+    parser.add_argument('--alpha_tildeq', type=float, default=0.5)
+    parser.add_argument('--gamma_tildeq', type=float, default=0.01)
+
+    # VARIFOLD
+    parser.add_argument('--number_of_kernels', type=int, default=1, help='2 if sum of kernels)')
+
+    parser.add_argument('--position_kernel', type=str, default="Gaussian", help='Gaussian of Cauchy, for OneKernel')
+    parser.add_argument('--sigma_t_pos', type=float, default=1)
+    parser.add_argument('--sigma_s_pos', type=float, default=1)
+    parser.add_argument('--orientation_kernel', type=str, default="Distribution", help='Distribution, Current, UnorientedVarifold or OrientedVarifold, for OneKernel')
+
+    
+    parser.add_argument('--sigma_t_or', type=float, default=1)
+    
+    parser.add_argument('--sigma_s_or', type=float, default=1)
+
+    parser.add_argument('--sigma_t_pos_little', type=float, default=1)
+    parser.add_argument('--sigma_t_or_little', type=float, default=1)
+    parser.add_argument('--sigma_t_pos_big', type=float, default=1)
+    parser.add_argument('--sigma_t_or_big', type=float, default=1)
+    parser.add_argument('--sigma_s_pos_little', type=float, default=1)
+    parser.add_argument('--sigma_s_or_little', type=float, default=1)
+    parser.add_argument('--sigma_s_pos_big', type=float, default=1)
+    parser.add_argument('--sigma_s_or_big', type=float, default=1)
+
+    # Heatmaps  
     parser.add_argument('--heatmaps_base_name', type=str, required=False, default='heatmaps',
-                        help='Base name for heatmaps without sigma specifications')
+                        help='Base name for heatmaps without parameters specifications')
 
 
     args = parser.parse_args()
@@ -183,17 +148,19 @@ if __name__ == '__main__':
 
     print('Args in experiment:')
     print(args)
+    
+    Exp = Exp_Long_Term_Forecast
 
-    if args.exp_name == 'partial_train':
-        Exp = Exp_Long_Term_Forecast_Partial
-    else:
-        Exp = Exp_Long_Term_Forecast
+    metrics_results = []
+    metrics_on_vali_results = []
+    heatmap_dict = {}
 
+    seeds = [2024 + i for i in range(args.itr)]
 
     if args.is_training:
         for ii in range(args.itr):
 
-            seed = seeds[ii % len(seeds)]  
+            seed = seeds[ii]  
             random.seed(seed)
             torch.manual_seed(seed)
             np.random.seed(seed)

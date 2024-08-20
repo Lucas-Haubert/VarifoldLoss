@@ -1,15 +1,9 @@
 import torch
 
-# Definitions of the position and orientation kernels
 
-# ATTENTION: n_dim is the dimension of the time + space embedding (number of channels + 1). 
+# Position kernels
 
-
-# [Kernels as defined as the beggining, cf questions about the validity / improvements]
-
-# Used for both position kernel (ok, as in the article)
-# and orientation kernel (not really like the oriented varifold in the paper)
-def TSGaussKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+def PositionGaussian(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
     sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
     sigmas[0,0,0] /= sigma_t
     sigmas[0,0,1:] /= sigma_s
@@ -17,8 +11,7 @@ def TSGaussKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
         return torch.exp(-torch.sum(((sigmas*bx)[:,:,None,:] - (sigmas*by)[:,None,:,:])**2,dim=-1))
     return K
 
-# Used for the position kernel only (ok, as in the article)
-def TSCauchyKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+def PositionCauchy(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
     sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
     sigmas[0,0,0] /= sigma_t
     sigmas[0,0,1:] /= sigma_s
@@ -28,8 +21,18 @@ def TSCauchyKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
         return 1 / (1 + squared_diffs)
     return K
 
-# Used for orientation kernel only (almost like the article, because of scalar representation)
-def TSCurrent(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+
+# Orientation kernels
+
+def OrientationDistribution(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+    sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
+    sigmas[0,0,0] /= sigma_t
+    sigmas[0,0,1:] /= sigma_s
+    def K(bx, by):
+        return torch.sum(torch.ones_like((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]), axis=-1)
+    return K
+
+def OrientationCurrent(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
     sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
     sigmas[0,0,0] /= sigma_t
     sigmas[0,0,1:] /= sigma_s
@@ -37,8 +40,7 @@ def TSCurrent(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
         return torch.sum(((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]),axis=-1)
     return K
 
-# Used for orientation kernel only (almost like the article, because of scalar representation)
-def TSDotKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+def OrientationUnorientedVarifold(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
     sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
     sigmas[0,0,0] /= sigma_t
     sigmas[0,0,1:] /= sigma_s
@@ -46,14 +48,21 @@ def TSDotKernel(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
         return torch.sum(((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]),axis=-1)**2
     return K
 
+def OrientationOrientedVarifold(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+    sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
+    sigmas[0,0,0] /= sigma_t
+    sigmas[0,0,1:] /= sigma_s
+    def K(bx,by):
+        return torch.exp(-torch.sum(((sigmas*bx)[:,:,None,:] - (sigmas*by)[:,None,:,:])**2,dim=-1))
+    return K
 
 
-# Propositions of adaptations to get close to the article
-
+# Propositions of adaptations to get close to the article => speak about this with Thibaut
 
 # But even here, the definition of the scalar product is not exactly the same as in the article
+# Notice that the scalar product problem discrepancy is also present on Current and Unoriented
 # It is the same idea, but one have to choose one way
-def OrientedVarifold(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
+def OrientationOrientedVarifoldProposal(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
     sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
     sigmas[0,0,0] /= sigma_t
     sigmas[0,0,1:] /= sigma_s
@@ -64,97 +73,33 @@ def OrientedVarifold(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
 
 
 
-# Definitions of the kernels to define the loss
 
 
+# Definition of the kernel to define the loss
 
-def TSCauchyCurrentKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSCurrent(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
+position_kernel_dictionary = {"Gaussian": PositionGaussian, "Cauchy": PositionCauchy}
+orientation_kernel_dictionary = {"Distribution": OrientationDistribution, "Current": OrientationCurrent, "UnorientedVarifold": OrientationUnorientedVarifold, "OrientedVarifold": OrientationOrientedVarifold}
+
+def OneKernel(position_kernel, orientation_kernel, sigma_t_pos, sigma_s_pos, 
+              sigma_t_or, sigma_s_or, n_dim, dtype=torch.float, device="cpu"):
+    K_position = position_kernel_dictionary[position_kernel](sigma_t, sigma_s, n_dim, dtype=dtype, device=device)
+    K_orientation = orientation_kernel_dictionary[orientation_kernel](sigma_t, sigma_s, n_dim, dtype=dtype, device=device)
     def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
+        return K_position(x,y)*K_orientation(u,v)
     return K
 
-def TSCauchyPosOnlyKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
+def TwoKernels(position_kernel_little, orientation_kernel_little, position_kernel_big, orientation_kernel_big, 
+               sigma_t_pos_little, sigma_s_pos_little, sigma_t_or_little, sigma_s_or_little, 
+               sigma_t_pos_big, sigma_s_pos_big, sigma_t_or_big, sigma_s_or_big, 
+               weight_little, weight_big, n_dim, dtype=torch.float, device="cpu"):
+    K_position_little = position_kernel_dictionary[position_kernel_little](sigma_t_pos_little, sigma_s_pos_little, n_dim, dtype=dtype, device=device)
+    K_orientation_little = orientation_kernel_dictionary[orientation_kernel_little](sigma_t_or_little, sigma_s_or_little, n_dim, dtype=dtype, device=device)
+    K_position_big = position_kernel_dictionary[position_kernel_big](sigma_t_pos_big, sigma_s_pos_big, n_dim, dtype=dtype, device=device)
+    K_orientation_big = orientation_kernel_dictionary[orientation_kernel_big](sigma_t_or_big, sigma_s_or_big, n_dim, dtype=dtype, device=device)*
     def K(x,y,u,v):
-        return K1(x,y)
-    return K
-
-def TSCauchyDotProductKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSDotKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
-    return K
-
-def TSCauchyGaussianKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1 = TSCauchyKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSGaussKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
-    return K
-
-
-def TSGaussGaussKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSGaussKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
-    return K
-
-def TSGaussGaussKernelSum(sigma_t_1_little, sigma_s_1_little, sigma_t_2_little, sigma_s_2_little, 
-                          sigma_t_1_big, sigma_s_1_big, sigma_t_2_big, sigma_s_2_big,
-                          n_dim, dtype = torch.float, device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1_little = TSGaussKernel(sigma_t_1_little, sigma_s_1_little, n_dim=n_dim, dtype=dtype, device=device)
-    K1_big = TSGaussKernel(sigma_t_1_big, sigma_s_1_big, n_dim=n_dim, dtype=dtype, device=device)
-    K2_little = TSGaussKernel(sigma_t_2_little, sigma_s_2_little, n_dim=n_dim, dtype=dtype, device=device)
-    K2_big = TSGaussKernel(sigma_t_2_big, sigma_s_2_big, n_dim=n_dim, dtype=dtype, device=device)
-    def K(x,y,u,v):
-        return 0.25*(K1_little(x,y) + K1_big(x,y))*(K2_little(u,v) + K2_big(u,v)) # 0.25 because the summing weights are 0.5
-    return K
-
-def TSGaussCurrentKernelSum(sigma_t_1_little, sigma_s_1_little, sigma_t_2_little, sigma_s_2_little, 
-                          sigma_t_1_big, sigma_s_1_big, sigma_t_2_big, sigma_s_2_big,
-                          n_dim, dtype = torch.float, device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim should be N+1.
-    K1_little = TSGaussKernel(sigma_t_1_little, sigma_s_1_little, n_dim=n_dim, dtype=dtype, device=device)
-    K1_big = TSGaussKernel(sigma_t_1_big, sigma_s_1_big, n_dim=n_dim, dtype=dtype, device=device)
-    K2_little = TSCurrent(sigma_t_2_little, sigma_s_2_little, n_dim=n_dim, dtype=dtype, device=device)
-    K2_big = TSCurrent(sigma_t_2_big, sigma_s_2_big, n_dim=n_dim, dtype=dtype, device=device)
-    def K(x,y,u,v):
-        return 0.25*(K1_little(x,y) + K1_big(x,y))*(K2_little(u,v) + K2_big(u,v)) # 0.25 because the summing weights are 0.5
-    return K
-
-
-def TSGaussDotKernel(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
-    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSDotKernel(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
-    return K
-
-
-def TSGaussCurrent(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
-    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    K2 = TSCurrent(sigma_t_2,sigma_s_2,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)*K2(u,v)
-    return K
-
-def TSGaussPosOnly(sigma_t_1,sigma_s_1,sigma_t_2,sigma_s_2,n_dim,dtype = torch.float,device = "cpu"):
-    # ATTENTION: n_dim is the dimension of the time + space embedding. If the signal has N dimension n_dim shoulb be N+1.
-    K1 = TSGaussKernel(sigma_t_1,sigma_s_1,n_dim=n_dim,dtype=dtype,device=device)
-    def K(x,y,u,v):
-        return K1(x,y)
+        K_position = weight_little*K_position_little(x,y) + weight_big*K_position_big(x,y)
+        K_orientation = weight_little*K_orientation_little(u,v) + weight_big*K_orientation_big(u,v)
+        return K_position*K_orientation
     return K
 
 
