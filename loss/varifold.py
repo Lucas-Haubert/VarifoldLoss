@@ -82,8 +82,8 @@ orientation_kernel_dictionary = {"Distribution": OrientationDistribution, "Curre
 
 def OneKernel(position_kernel, orientation_kernel, sigma_t_pos, sigma_s_pos, 
               sigma_t_or, sigma_s_or, n_dim, dtype=torch.float, device="cpu"):
-    K_position = position_kernel_dictionary[position_kernel](sigma_t, sigma_s, n_dim, dtype=dtype, device=device)
-    K_orientation = orientation_kernel_dictionary[orientation_kernel](sigma_t, sigma_s, n_dim, dtype=dtype, device=device)
+    K_position = position_kernel_dictionary[position_kernel](sigma_t_pos, sigma_s_pos, n_dim, dtype=dtype, device=device)
+    K_orientation = orientation_kernel_dictionary[orientation_kernel](sigma_t_or, sigma_s_or, n_dim, dtype=dtype, device=device)
     def K(x,y,u,v):
         return K_position(x,y)*K_orientation(u,v)
     return K
@@ -95,7 +95,7 @@ def TwoKernels(position_kernel_little, orientation_kernel_little, position_kerne
     K_position_little = position_kernel_dictionary[position_kernel_little](sigma_t_pos_little, sigma_s_pos_little, n_dim, dtype=dtype, device=device)
     K_orientation_little = orientation_kernel_dictionary[orientation_kernel_little](sigma_t_or_little, sigma_s_or_little, n_dim, dtype=dtype, device=device)
     K_position_big = position_kernel_dictionary[position_kernel_big](sigma_t_pos_big, sigma_s_pos_big, n_dim, dtype=dtype, device=device)
-    K_orientation_big = orientation_kernel_dictionary[orientation_kernel_big](sigma_t_or_big, sigma_s_or_big, n_dim, dtype=dtype, device=device)*
+    K_orientation_big = orientation_kernel_dictionary[orientation_kernel_big](sigma_t_or_big, sigma_s_or_big, n_dim, dtype=dtype, device=device)
     def K(x,y,u,v):
         K_position = weight_little*K_position_little(x,y) + weight_big*K_position_big(x,y)
         K_orientation = weight_little*K_orientation_little(u,v) + weight_big*K_orientation_big(u,v)

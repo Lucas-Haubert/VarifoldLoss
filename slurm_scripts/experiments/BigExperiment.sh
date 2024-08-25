@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=BigExperiment
-#SBATCH --output=slurm_outputs/%x.job_%j
+#SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 

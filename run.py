@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # Base configuration
     parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
-    parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
+    parser.add_argument('--script_name', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='iTransformer',
                         help='model name, options: [MLP, LSTM, CNN, Transformer, iTransformer, SegRNN, TimesNet]')
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
     parser.add_argument('--freq', type=str, default='h',
                         help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-    parser.add_argument('--checkpoints', type=str, default='./outputs/checkpoints/', help='location of model checkpoints')
+    parser.add_argument('--checkpoints', type=str, default='./new_outputs/checkpoints/', help='location of model checkpoints')
 
     # Observation and horizon
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
@@ -70,12 +70,18 @@ if __name__ == '__main__':
     parser.add_argument('--loss', type=str, default='MSE', help='loss function')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
+    parser.add_argument('--plot_metrics_and_gains', type=int, default=0, help='1 to plot metrics and gains curves over epochs')
+    parser.add_argument('--bool_plot_examples_without_forecasts', type=int, default=0, help='1 to plot examples of time series in the dataset')
 
     # GPU
     parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
     parser.add_argument('--gpu', type=int, default=0, help='gpu')
     parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
+
+    # TCN
+    parser.add_argument('--out_dim_first_layer', type=int, default=32, help='then multiplied by 2 each layer')
+    parser.add_argument('--fixed_kernel_size_tcn', type=int, default=2, help='fixed kernel size')
 
     # TimesNet
     parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
@@ -110,26 +116,37 @@ if __name__ == '__main__':
     parser.add_argument('--gamma_tildeq', type=float, default=0.01)
 
     # VARIFOLD
+
+    # One kernel or two kernels in a sum
     parser.add_argument('--number_of_kernels', type=int, default=1, help='2 if sum of kernels)')
 
+    # One kernel
     parser.add_argument('--position_kernel', type=str, default="Gaussian", help='Gaussian of Cauchy, for OneKernel')
     parser.add_argument('--sigma_t_pos', type=float, default=1)
     parser.add_argument('--sigma_s_pos', type=float, default=1)
     parser.add_argument('--orientation_kernel', type=str, default="Distribution", help='Distribution, Current, UnorientedVarifold or OrientedVarifold, for OneKernel')
-
-    
     parser.add_argument('--sigma_t_or', type=float, default=1)
-    
     parser.add_argument('--sigma_s_or', type=float, default=1)
 
+    # Two kernels
+    parser.add_argument('--position_kernel_little', type=str, default="Gaussian", help='Gaussian of Cauchy')
     parser.add_argument('--sigma_t_pos_little', type=float, default=1)
-    parser.add_argument('--sigma_t_or_little', type=float, default=1)
-    parser.add_argument('--sigma_t_pos_big', type=float, default=1)
-    parser.add_argument('--sigma_t_or_big', type=float, default=1)
     parser.add_argument('--sigma_s_pos_little', type=float, default=1)
+
+    parser.add_argument('--orientation_kernel_little', type=str, default="Distribution", help='Distribution, Current, UnorientedVarifold or OrientedVarifold')
+    parser.add_argument('--sigma_t_or_little', type=float, default=1)
     parser.add_argument('--sigma_s_or_little', type=float, default=1)
+
+    parser.add_argument('--position_kernel_big', type=str, default="Gaussian", help='Gaussian of Cauchy')
+    parser.add_argument('--sigma_t_pos_big', type=float, default=1)
     parser.add_argument('--sigma_s_pos_big', type=float, default=1)
+
+    parser.add_argument('--orientation_kernel_big', type=str, default="Distribution", help='Distribution, Current, UnorientedVarifold or OrientedVarifold')
+    parser.add_argument('--sigma_t_or_big', type=float, default=1)
     parser.add_argument('--sigma_s_or_big', type=float, default=1)
+
+    parser.add_argument('--weight_little', type=float, default=0.5)
+    parser.add_argument('--weight_big', type=float, default=0.5)
 
     # Heatmaps  
     parser.add_argument('--heatmaps_base_name', type=str, required=False, default='heatmaps',
@@ -151,9 +168,108 @@ if __name__ == '__main__':
     
     Exp = Exp_Long_Term_Forecast
 
+    learning_rate_str = str(args.learning_rate).replace('.', 'dot')
+
+    if args.loss == 'MSE':
+                setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Epo{}_Pat{}_B{}_lr{}'.format(
+                    args.evaluation_mode,
+                    args.script_name,
+                    args.model,
+                    args.data_path.split('.')[0],
+                    args.features,
+                    args.seq_len,
+                    args.pred_len,
+                    args.loss,
+                    args.train_epochs,
+                    args.patience,
+                    args.batch_size,
+                    learning_rate_str)
+
+    elif args.loss == 'DILATE':
+        setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Epo{}_Pat{}_B{}_lr{}'.format(
+            args.evaluation_mode,
+            args.script_name,
+            args.model,
+            args.data_path.split('.')[0],
+            args.features,
+            args.seq_len,
+            args.pred_len,
+            args.loss,
+            args.alpha_dilate,
+            args.train_epochs,
+            args.patience,
+            args.batch_size,
+            learning_rate_str)
+
+    elif args.loss == 'TILDEQ':
+        setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Gamma{}_Epo{}_Pat{}_B{}_lr{}'.format(
+            args.evaluation_mode,
+            args.script_name,
+            args.model,
+            args.data_path.split('.')[0],
+            args.features,
+            args.seq_len,
+            args.pred_len,
+            args.loss,
+            args.alpha_tildeq,
+            args.gamma_tildeq,
+            args.train_epochs,
+            args.patience,
+            args.batch_size,
+            learning_rate_str)
+
+    elif args.loss == 'VARIFOLD':
+        if args.number_of_kernels == 1:
+            setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_OneKer_PKer{}_{}_{}_OKer{}_{}_{}_Epo{}_Pat{}_B{}_lr{}'.format(
+                args.evaluation_mode,
+                args.script_name,
+                args.model,
+                args.data_path.split('.')[0],
+                args.features,
+                args.seq_len,
+                args.pred_len,
+                args.loss,
+                args.position_kernel,
+                args.sigma_t_pos,
+                args.sigma_s_pos,
+                args.orientation_kernel,
+                args.sigma_t_or,
+                args.sigma_s_or,
+                args.train_epochs,
+                args.patience,
+                args.batch_size,
+                learning_rate_str)
+        elif args.number_of_kernels == 2:
+            setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_TwoKer_PKer_l{}_{}_{}_OKer_l{}_{}_{}_PKer_b{}_{}_{}_OKer_b{}_{}_{}_w_l{}_w_b{}_Epo{}_Pat{}_B{}_lr{}'.format(
+                args.evaluation_mode,
+                args.script_name,
+                args.model,
+                args.data_path.split('.')[0],
+                args.features,
+                args.seq_len,
+                args.pred_len,
+                args.loss,
+                args.position_kernel_little,
+                args.sigma_t_pos_little,
+                args.sigma_s_pos_little,
+                args.orientation_kernel_little,
+                args.sigma_t_or_little,
+                args.sigma_s_or_little,
+                args.position_kernel_big,
+                args.sigma_t_pos_big,
+                args.sigma_s_pos_big,
+                args.orientation_kernel_big,
+                args.sigma_t_or_big,
+                args.sigma_s_or_big,
+                args.weight_little,
+                args.weight_big,
+                args.train_epochs,
+                args.patience,
+                args.batch_size,
+                learning_rate_str)
+
     metrics_results = []
     metrics_on_vali_results = []
-    heatmap_dict = {}
 
     seeds = [2024 + i for i in range(args.itr)]
 
@@ -165,52 +281,31 @@ if __name__ == '__main__':
             torch.manual_seed(seed)
             np.random.seed(seed)
 
-            setting = 'evalmode_{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
-                args.evaluation_mode,
-                args.model_id,
-                args.model,
-                args.data,
-                args.features,
-                args.seq_len,
-                args.label_len,
-                args.pred_len,
-                args.d_model,
-                args.n_heads,
-                args.e_layers,
-                args.d_layers,
-                args.d_ff,
-                args.factor,
-                args.embed,
-                args.distil,
-                args.des,
-                args.class_strategy, ii)
-
-            # exp = Exp(args)
-            # exp.plot_batches_without_prediction(setting)
+            setting_iter = setting + '_Iteration{}'.format(ii)
 
             exp = Exp(args)
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting_iter))
             start_training = time.time()
-            exp.train(setting)
+            exp.train(setting_iter)
             end_training = time.time()
             print("Training with {} epochs: {} seconds".format(args.train_epochs, end_training - start_training))
 
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting_iter))
             start_testing = time.time()
 
             if args.evaluation_mode == 'raw':
-                test_metrics = exp.test(setting, test=1)
+                test_metrics = exp.test(setting_iter, test=1)
             elif args.evaluation_mode == 'structural':
-                test_metrics = exp.test_structural(setting, test=1)
+                test_metrics = exp.test_structural(setting_iter, test=1)
 
             end_testing = time.time()
             print("Testing: {} seconds".format(end_testing - start_testing))
 
-            vali_metrics = exp.test_on_vali(setting, test=1)
+            vali_metrics = exp.test_on_vali(setting_iter, test=1)
 
             if args.do_predict:
-                print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-                exp.predict(setting, True)
+                print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting_iter))
+                exp.predict(setting_iter, True)
 
             torch.cuda.empty_cache()
 
@@ -218,57 +313,102 @@ if __name__ == '__main__':
             metrics_on_vali_results.append(vali_metrics)
 
         mean_metrics, median_metrics, std_metrics = compute_mean_median_std_metrics(metrics_results)
-
         mean_vali_metrics, median_vali_metrics, std_vali_metrics = compute_mean_median_std_metrics(metrics_on_vali_results)
 
-        # list_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_low', 'rFFT_mid', 'rFFT_high', 'rSE']
-        list_metrics = ['MSE', 'MAE', 'DTW', 'TDI']
+        formated_mean_metrics = ", ".join([f"{metric}:{mean_metrics[metric]}" for metric in mean_metrics.keys()])
+        formated_median_metrics = ", ".join([f"{metric}:{median_metrics[metric]}" for metric in median_metrics.keys()])
+        formated_std_metrics = ", ".join([f"{metric}:{std_metrics[metric]}" for metric in std_metrics.keys()])
+        formated_mean_vali_metrics = ", ".join([f"{metric}:{mean_vali_metrics[metric]}" for metric in mean_vali_metrics.keys()])
+        formated_median_vali_metrics = ", ".join([f"{metric}:{median_vali_metrics[metric]}" for metric in median_vali_metrics.keys()])
+        formated_std_vali_metrics = ", ".join([f"{metric}:{std_vali_metrics[metric]}" for metric in std_vali_metrics.keys()])
 
-        mean_metrics_dict = {metric: mean_metrics[metric] for metric in list_metrics}
-        median_metrics_dict = {metric: median_metrics[metric] for metric in list_metrics}
-        std_metrics_dict = {metric: std_metrics[metric] for metric in list_metrics}
+        folder_path = './new_outputs/numerical_results/' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        file_path = os.path.join(folder_path, f"txt_metrics_global_{setting}.txt")
+        with open(file_path, 'a') as f:
+            f.write(setting + "  \n")
+            f.write('Number of iterations : ' + str(args.itr) + '\n')
+            f.write('Mean metrics :' + formated_mean_metrics + '\n')
+            f.write('Median metrics :' + formated_median_metrics + '\n')
+            f.write('Standard deviation of metrics :' + formated_std_metrics + '\n')
+            f.write('Mean metrics on validation dataset :' + formated_mean_vali_metrics + '\n')
+            f.write('Median metrics on validation dataset :' + formated_median_vali_metrics + '\n')
+            f.write('Standard deviation of metrics on validation dataset :' + formated_std_vali_metrics + '\n')
+            f.write('\n')
+            f.write('\n')
 
-        print('Mean metrics:', mean_metrics_dict)
-        print('Median metrics:', median_metrics_dict)
-        print('Standard deviation of metrics:', std_metrics_dict)
+        print('Mean metrics:', mean_metrics)
+        print('Median metrics:', median_metrics)
+        print('Standard deviation of metrics:', std_metrics)
 
-        mean_vali_metrics_dict = {metric: mean_vali_metrics[metric] for metric in list_metrics}
-        median_vali_metrics_dict = {metric: median_vali_metrics[metric] for metric in list_metrics}
-        std_vali_metrics_dict = {metric: std_vali_metrics[metric] for metric in list_metrics}
+        print('Mean metrics on validation dataset:', mean_vali_metrics)
+        print('Median metrics on validation dataset:', median_vali_metrics)
+        print('Standard deviation of metrics on validation dataset:', std_vali_metrics)
 
-        print('Mean metrics on validation dataset:', mean_vali_metrics_dict)
-        print('Median metrics on validation dataset:', median_vali_metrics_dict)
-        print('Standard deviation of metrics on validation dataset:', std_vali_metrics_dict)
 
+    # Revoir cette partie pour fonction de base de is_training == 0, mais aussi calcul heatmap dessus
+    
     else:
+        heatmap_dict = {}
+
         ii = 0
-        setting = 'evalmode_{}_{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
-            args.evaluation_mode,
-            args.model_id,
-            args.model,
-            args.data,
-            args.features,
-            args.seq_len,
-            args.label_len,
-            args.pred_len,
-            args.d_model,
-            args.n_heads,
-            args.e_layers,
-            args.d_layers,
-            args.d_ff,
-            args.factor,
-            args.embed,
-            args.distil,
-            args.des,
-            args.class_strategy, ii)
+
+        setting_iter = setting + '_Iteration{}'.format(ii)
 
         exp = Exp(args)
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting_iter))
 
         if args.evaluation_mode == 'raw':
-            test_metrics = exp.test(setting, test=1)
+            test_metrics = exp.test(setting_iter, test=1)
         elif args.evaluation_mode == 'structural':
-            test_metrics = exp.test_structural(setting, test=1)
+            test_metrics = exp.test_structural(setting_iter, test=1)
+
+        end_testing = time.time()
+        print("Testing: {} seconds".format(end_testing - start_testing))
+
+        vali_metrics = exp.test_on_vali(setting_iter, test=1)
+
+        torch.cuda.empty_cache()
+
+        mean_metrics, median_metrics, std_metrics = compute_mean_median_std_metrics([metrics_results])
+        mean_vali_metrics, median_vali_metrics, std_vali_metrics = compute_mean_median_std_metrics([metrics_on_vali_results])
+
+        formated_mean_metrics = ", ".join([f"{metric}:{mean_metrics[metric]}" for metric in mean_metrics.keys()])
+        formated_median_metrics = ", ".join([f"{metric}:{median_metrics[metric]}" for metric in median_metrics.keys()])
+        formated_std_metrics = ", ".join([f"{metric}:{std_metrics[metric]}" for metric in std_metrics.keys()])
+        formated_mean_vali_metrics = ", ".join([f"{metric}:{mean_vali_metrics[metric]}" for metric in mean_vali_metrics.keys()])
+        formated_median_vali_metrics = ", ".join([f"{metric}:{median_vali_metrics[metric]}" for metric in median_vali_metrics.keys()])
+        formated_std_vali_metrics = ", ".join([f"{metric}:{std_vali_metrics[metric]}" for metric in std_vali_metrics.keys()])
+
+        folder_path = './new_outputs/numerical_results/' + setting + '/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        file_path = os.path.join(folder_path, f"txt_metrics_global_{setting}.txt")
+        with open(file_path, 'a') as f:
+            f.write(setting + "  \n")
+            f.write('Number of iterations : ' + str(args.itr) + '\n')
+            f.write('Mean metrics :' + formated_mean_metrics + '\n')
+            f.write('Median metrics :' + formated_median_metrics + '\n')
+            f.write('Standard deviation of metrics :' + formated_std_metrics + '\n')
+            f.write('Mean metrics on validation dataset :' + formated_mean_vali_metrics + '\n')
+            f.write('Median metrics on validation dataset :' + formated_median_vali_metrics + '\n')
+            f.write('Standard deviation of metrics on validation dataset :' + formated_std_vali_metrics + '\n')
+            f.write('\n')
+            f.write('\n')
+
+        print('Mean metrics:', mean_metrics)
+        print('Median metrics:', median_metrics)
+        print('Standard deviation of metrics:', std_metrics)
+
+        print('Mean metrics on validation dataset:', mean_vali_metrics)
+        print('Median metrics on validation dataset:', median_vali_metrics)
+        print('Standard deviation of metrics on validation dataset:', std_vali_metrics)
+
+
+        """
 
         heatmap_file_path = os.path.join('new_outputs', 'numerical_results', f'{args.heatmaps_base_name}.json')
 
@@ -293,6 +433,8 @@ if __name__ == '__main__':
             json.dump(heatmap_dict, json_file, indent=4)
 
         torch.cuda.empty_cache()
+
+        """
 
         
 

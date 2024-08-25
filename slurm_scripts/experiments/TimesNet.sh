@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=TUESDAY_MEETING_TimesNet_electricity_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_32_lr_0dot0001
-#SBATCH --output=slurm_outputs/%x.job_%j
+#SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 

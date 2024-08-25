@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=Synth_1_SNR_15_structural_CNN_VAR_PosOnly_1_1_d_model_512_B_4_lr_10e-4
-#SBATCH --output=slurm_outputs/%x.job_%j
+#SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1

@@ -108,16 +108,22 @@ def rSE(series_pred, series_ground):
 
 # Compute the metrics
 
-def compute_metrics(pred, true):
-    metrics = {
-            'MSE': MSE(pred, true),
-            'MAE': MAE(pred, true),
-            'DTW': DTW(pred, true),
-            'TDI': TDI(pred, true)
-    }
+def compute_metrics(pred, true, list_of_metrics):
+    metrics = {}
+    
+    for metric in list_of_metrics:
+        if metric.startswith('rFFT_'):
+            freq_range_str = metric[len('rFFT_') + 1:-1]
+            first, last = freq_range_str.split('_')
+            first = float(first.replace('dot', '.'))
+            last = float(last.replace('dot', '.'))
+            metrics[metric] = rFFT(pred, true, frequency_range=(first, last))
+        else:
+            metrics[metric] = globals()[metric](pred, true)
+    
     return metrics
 
-
+# Cette version permet de calculer les métriques depuis list_of_metrics directement, pas comme la version suivante
 
 # def compute_metrics(pred, true):
     
@@ -125,6 +131,7 @@ def compute_metrics(pred, true):
 #             'MSE': MSE(pred, true),
 #             'MAE': MAE(pred, true),
 #             'DTW': DTW(pred, true),
+#             'TDI': TDI(pred, true),
 #             'rFFT_low': rFFT(pred, true, frequency_range=(0, 0.02)),
 #             'rFFT_mid': rFFT(pred, true, frequency_range=(0.02, 0.15)),
 #             'rFFT_high': rFFT(pred, true, frequency_range=(0.15, 0.35)),
@@ -150,166 +157,3 @@ def compute_mean_median_std_metrics(metrics_list):
     std_metrics = {metric: np.std(aggregated_metrics[metric]) for metric in metric_names}
 
     return mean_metrics, median_metrics, std_metrics
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Optionnal (not supposed to be metrics, see if I keep them)
-
-from loss.dilate.dilate_loss import DILATE
-from loss.tildeq import tildeq_loss
-from loss.varifold import TSGaussKernel, TSGaussGaussKernel, TSDotKernel, TSGaussDotKernel, time_embed, compute_position_tangent_volume, VarifoldLoss
-
-
-def DILATE_metric(pred, true, alpha):
-
-    pred = torch.from_numpy(pred).cpu()
-    true = torch.from_numpy(true).cpu()
-
-    dilate = DILATE(pred, true, alpha=alpha)
-
-    return dilate
-
-
-def VARIFOLD_metric_traffic(pred, true):
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    pred = torch.from_numpy(pred).to(device)
-    true = torch.from_numpy(true).to(device)
-
-    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 14.7, sigma_t_2 = 1, sigma_s_2 = 14.7, n_dim = 863, device=device)
-    intermediate = VarifoldLoss(K, device=device)
-
-    # Without introducing a new batch_size
-    #varifold = intermediate(pred, true)
-
-    #new_batch_size = 8
-    new_batch_size = 4
-    initial_number_of_batches = pred.shape[0]
-    varifold_total = 0
-
-    for i in range(0, initial_number_of_batches, new_batch_size):
-        pred_batch = pred[i:i+new_batch_size]
-        true_batch = true[i:i+new_batch_size]
-        varifold_batch = intermediate(pred_batch, true_batch)
-        varifold_total += varifold_batch * new_batch_size
-    
-    varifold = varifold_total / (initial_number_of_batches // new_batch_size)
-
-    return varifold.cpu()
-
-def VARIFOLD_metric_electricity(pred, true):
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    pred = torch.from_numpy(pred).to(device)
-    true = torch.from_numpy(true).to(device)
-
-    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 8.9, sigma_t_2 = 1, sigma_s_2 = 8.9, n_dim = 322, device=device)
-    intermediate = VarifoldLoss(K, device=device)
-
-    # Without introducing a new batch_size
-    #varifold = intermediate(pred, true)
-
-    #new_batch_size = 8
-    new_batch_size = 4
-    initial_number_of_batches = pred.shape[0]
-    varifold_total = 0
-
-    for i in range(0, initial_number_of_batches, new_batch_size):
-        pred_batch = pred[i:i+new_batch_size]
-        true_batch = true[i:i+new_batch_size]
-        varifold_batch = intermediate(pred_batch, true_batch)
-        varifold_total += varifold_batch * new_batch_size
-    
-    varifold = varifold_total / (initial_number_of_batches // new_batch_size)
-
-    return varifold.cpu()
-
-def VARIFOLD_metric_exchange(pred, true):
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    pred = torch.from_numpy(pred).to(device)
-    true = torch.from_numpy(true).to(device)
-
-    K = TSGaussGaussKernel(sigma_t_1 = 1, sigma_s_1 = 1.4, sigma_t_2 = 1, sigma_s_2 = 1.4, n_dim = 9, device=device)
-    intermediate = VarifoldLoss(K, device=device)
-
-    varifold = intermediate(pred, true)
-
-    return varifold.cpu()
-
-
-def DILATE_05(pred, true):
-    return DILATE_metric(pred, true, alpha=0.5)
-
-def DILATE_08(pred, true):
-    return DILATE_metric(pred, true, alpha=0.8)
-
-def DILATE_1(pred, true):  
-    return DILATE_metric(pred, true, alpha=1)
-
-
-def softDTW(pred, true):
-    return DILATE_metric(pred, true, alpha=1)
-
-
-def softTDI(pred, true):
-    return DILATE_metric(pred, true, alpha=0)
-
-
-def TILDEQ_metric(pred, true, alpha):
-
-    pred = torch.from_numpy(pred).cpu()
-    true = torch.from_numpy(true).cpu()
-
-    tildeq = tildeq_loss(pred, true, alpha=alpha)
-
-    return tildeq
-
-
-def TILDEQ_05(pred, true):
-    return TILDEQ_metric(pred, true, alpha=0.5)
-
-
-def TILDEQ_1(pred, true):
-    return TILDEQ_metric(pred, true, alpha=1)
-
-
-def TILDEQ_00(pred, true):
-    return TILDEQ_metric(pred, true, alpha=0)
-
-# def fourier_spectra(series, frequency_range):
-    
-#     fourier_coefficients = rfft(series, axis=1)
-#     print("fourier_coefficients", fourier_coefficients)
-#     print("fourier_coefficients.shape", fourier_coefficients.shape)
-#     frequencies = rfftfreq(len(series[1]))
-#     print("frequencies", frequencies)
-#     print("frequencies.shape", frequencies.shape)
-    
-#     fourier_df = pd.DataFrame({'frequency': frequencies, 'amplitude': np.abs(fourier_coefficients)})
-    
-#     frequency_band = fourier_df[(fourier_df['frequency'] >= frequency_range[0]) & (fourier_df['frequency'] < frequency_range[1])]
-#     mean_fourier_coef = frequency_band['amplitude'].mean()
-    
-#     return mean_fourier_coef
