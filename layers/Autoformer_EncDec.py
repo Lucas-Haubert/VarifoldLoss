@@ -27,6 +27,7 @@ class moving_avg(nn.Module):
         super(moving_avg, self).__init__()
         self.kernel_size = kernel_size
         self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=0)
+        #self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=(kernel_size-1)//2)
 
     def forward(self, x):
         # padding on the both ends of time series

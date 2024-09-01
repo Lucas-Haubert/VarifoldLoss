@@ -38,8 +38,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         self.vali_losses = []
         self.test_losses = []
 
-        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot001)', 'rFFT_(0dot005_0dot007)', 'rFFT_(0dot04_0dot06)', 'rFFT_(0dot37_0dot4)', 'rSE'] # ce que j'ai pour l'instant sur Fractal_Config_1
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot005)', 'rFFT_(0dot005_0dot1)', 'rFFT_(0dot1_0dot2)', 'rFFT_(0dot1_0dot5)', 'rSE'] # pour noise robustness
+        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot001)', 'rFFT_(0dot005_0dot007)', 'rFFT_(0dot04_0dot06)', 'rFFT_(0dot37_0dot4)', 'rSE'] # Fractal_Config_1
+        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot01)', 'rFFT_(0dot01_0dot03)', 'rFFT_(0dot175_0dot225)', 'rSE'] # Fractal_Config_2
+        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot005)', 'rFFT_(0dot005_0dot1)', 'rFFT_(0dot1_0dot2)', 'rFFT_(0dot1_0dot5)', 'rSE'] # pour noise robustness
+        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI'] # DILATE real-world sans freq
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
 
         self.gains_test_loss = []
@@ -70,7 +72,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if self.args.loss == 'MSE':
             criterion = nn.MSELoss()
         elif self.args.loss == 'DILATE':
-            criterion = lambda x,y: DILATE(x,y, alpha = self.args.alpha_dilate)
+            criterion = lambda x,y: DILATE(x,y, alpha = self.args.alpha_dilate, gamma = self.args.gamma_dilate)
         elif self.args.loss == "TILDEQ":
             criterion = lambda x,y: tildeq_loss(x,y, alpha = self.args.alpha_tildeq)
         elif self.args.loss == "VARIFOLD":
@@ -510,7 +512,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 # Très bon, mais je le change pour ce que je veux faire ensuite (à coder plus proprement)
 
                 if i == 0:
-                    # Global scale (lenght 2000, centered)
+                    print('Plotting different forecasts')
+                    # Global scale (centered)
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
                         shape = input.shape
@@ -530,16 +533,39 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
                     plt.title(title)
                     
-                    plt.savefig(os.path.join(folder_path, 'Sample ' + 'scale_component_1' + '.png'))
+                    plt.savefig(os.path.join(folder_path, 'Plot_global_scale' + '.png'))
                     plt.close()
 
-                    # Medium scale (lenght 300)
+                    # Medium - big scale (centered)
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
                         shape = input.shape
                         input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
-                    gt = np.concatenate((input[0, -100:, -1], true[0, :200, -1]), axis=0)
-                    pd = np.concatenate((input[0, -100:, -1], pred[0, :200, -1]), axis=0)
+                    gt = np.concatenate((input[0, :, -1], true[0, :1000, -1]), axis=0)
+                    pd = np.concatenate((input[0, :, -1], pred[0, :1000, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, :, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_global_scale' + '.png'))
+                    plt.close()
+
+                    # Medium scale (lenght 450)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, -100:, -1], true[0, :350, -1]), axis=0)
+                    pd = np.concatenate((input[0, -100:, -1], pred[0, :350, -1]), axis=0)
 
                     plt.figure(figsize=(10, 5))
                     plt.plot(gt, color='darkblue', label='Ground Truth')
@@ -553,7 +579,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
                     plt.title(title)
                     
-                    plt.savefig(os.path.join(folder_path, 'Sample ' + 'scale_component_2' + '.png'))
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_scale' + '.png'))
                     plt.close()
 
                     # Little scale (lenght 50)
@@ -576,36 +602,59 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
                     plt.title(title)
                     
-                    plt.savefig(os.path.join(folder_path, 'Sample ' + 'scale_component_3' + '.png'))
+                    plt.savefig(os.path.join(folder_path, 'Plot_little_scale' + '.png'))
+                    plt.close()
+
+                    # Little - medium scale further (lenght 100)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, -15:, -1], true[0, :85, -1]), axis=0)
+                    pd = np.concatenate((input[0, -15:, -1], pred[0, :85, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, -15:, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_little_scale' + '.png'))
                     plt.close()
 
 
-                # number_samples = 3
-                # number_batches = len(test_loader)
-                # plot_indices = [i * number_batches // number_samples for i in range(number_samples)]
+                number_samples = 6
+                number_batches = len(test_loader)
+                plot_indices = [i * number_batches // number_samples for i in range(number_samples)]
                 
-                # if i in plot_indices:
-                #     input = batch_x.detach().cpu().numpy()
-                #     if test_data.scale and self.args.inverse:
-                #         shape = input.shape
-                #         input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
-                #     gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
-                #     pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
+                if i in plot_indices:
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
+                    pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
 
-                #     plt.figure(figsize=(10, 5))
-                #     plt.plot(gt, color='darkblue', label='Ground Truth')
-                #     plt.plot(pd, color='orange', label='Prediction')
-                #     plt.plot(input[0, :, -1], color='blue', label='Observations')
-                #     plt.legend()
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, :, -1], color='blue', label='Observations')
+                    plt.legend()
                     
-                #     if self.number_of_actual_epochs == 0:
-                #         title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
-                #     elif self.number_of_actual_epochs > 0:
-                #         title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
-                #     plt.title(title)
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
                     
-                #     plt.savefig(os.path.join(folder_path, 'Sample ' + str(i) + '.png'))
-                #     plt.close()
+                    plt.savefig(os.path.join(folder_path, 'Sample ' + str(i) + '.png'))
+                    plt.close()
                     
 
         preds = np.array(preds)
@@ -802,7 +851,124 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 preds.append(pred)
                 trues.append(true)
 
-                number_samples = 3
+                if i == 0:
+                    print('Plotting different forecasts')
+                    # Global scale (lenght 2000, centered)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
+                    pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, :, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_global_scale' + '.png'))
+                    plt.close()
+
+                    # Medium - big scale (lenght 1000, centered)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, :, -1], true[0, :1000, -1]), axis=0)
+                    pd = np.concatenate((input[0, :, -1], pred[0, :1000, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, :, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_global_scale' + '.png'))
+                    plt.close()
+
+                    # Medium scale (lenght 450)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, -100:, -1], true[0, :350, -1]), axis=0)
+                    pd = np.concatenate((input[0, -100:, -1], pred[0, :350, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, -100:, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_scale' + '.png'))
+                    plt.close()
+
+                    # Little scale (lenght 50)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, -15:, -1], true[0, :35, -1]), axis=0)
+                    pd = np.concatenate((input[0, -15:, -1], pred[0, :35, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, -15:, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_little_scale' + '.png'))
+                    plt.close()
+
+                    # Little - medium scale further (lenght 100)
+                    input = batch_x.detach().cpu().numpy()
+                    if test_data.scale and self.args.inverse:
+                        shape = input.shape
+                        input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                    gt = np.concatenate((input[0, -15:, -1], true[0, :85, -1]), axis=0)
+                    pd = np.concatenate((input[0, -15:, -1], pred[0, :85, -1]), axis=0)
+
+                    plt.figure(figsize=(10, 5))
+                    plt.plot(gt, color='darkblue', label='Ground Truth')
+                    plt.plot(pd, color='orange', label='Prediction')
+                    plt.plot(input[0, -15:, -1], color='blue', label='Observations')
+                    plt.legend()
+                    
+                    if self.number_of_actual_epochs == 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    elif self.number_of_actual_epochs > 0:
+                        title = f"Model: {self.args.model}, Loss: {self.args.loss}, Epochs: {self.number_of_actual_epochs}, Max epochs: {self.args.train_epochs}, W: {self.args.seq_len}, H: {self.args.pred_len}, Dataset: {self.args.data_path.split('.')[0]}"
+                    plt.title(title)
+                    
+                    plt.savefig(os.path.join(folder_path, 'Plot_medium_little_scale' + '.png'))
+                    plt.close()
+
+                number_samples = 6
                 number_batches = len(test_loader)
                 plot_indices = [i * number_batches // number_samples for i in range(number_samples)]
                 

@@ -11,6 +11,7 @@ class Model(nn.Module):
         self.pred_len = configs.pred_len
         self.d_model = configs.d_model
         self.e_layers = configs.e_layers
+        self.dropout = configs.dropout
 
         self.lstm = nn.LSTM(
             input_size=self.enc_in, 
@@ -21,15 +22,11 @@ class Model(nn.Module):
 
         self.fc = nn.Linear(self.d_model, self.pred_len * self.enc_in)
 
+        self.dropout_layer = nn.Dropout(self.dropout)
+
     def encoder(self, x):
 
-        # x has size [B, seq_len, C]
-
-        h0 = torch.zeros(self.e_layers, x.size(0), self.d_model, device=x.device)
-        c0 = torch.zeros(self.e_layers, x.size(0), self.d_model, device=x.device)
-
-        out, _ = self.lstm(x, (h0, c0))
-        #print("shape of the lstm output: ", out.shape) # [B, seq_len, d_model]
+        out, _ = self.lstm(x)
         
         return out 
 
@@ -38,13 +35,12 @@ class Model(nn.Module):
         out = self.encoder(x)
        
         out = out[:, -1, :]
-        #print("shape of lstm output after sclicing", out.shape)
+
+        out = self.dropout_layer(out)
 
         out = self.fc(out)
-        #print("shape of the output after fc layer: ", out.shape)
 
         out = out.view(out.size(0), self.pred_len, self.enc_in)
-        #print("shape of the output after reshaping: ", out.shape)
         
         return out
 

@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=Tuning_DILATE_iTransformer_Exchange_alpha
+#SBATCH --job-name=Tuning_DILATE_iTransformer_Traffic
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --nodes=4
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpu
+#SBATCH --partition=gpua100
 
 # Module load
 module load anaconda3/2021.05/gcc-9.2.0
@@ -18,7 +18,7 @@ source activate flexforecast
 model_name=iTransformer
 
 
-alpha_dilate_list=(0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1)
+alpha_dilate_list=( 0.8 0 0.2 0.5 1 )
 
 
 for alpha_dilate in "${alpha_dilate_list[@]}"
@@ -26,34 +26,35 @@ do
     
     alpha_dilate_name=$(echo $alpha_dilate | tr '.' 'dot')
     
-    model_name_str="Tuning_DILATE_iTransformer_Exchange_alpha_${alpha_dilate}_d_model_512_B_32_lr_10e-4"
+    model_name_str="Tuning_DILATE_iTransformer_Traffic_alpha_${alpha_dilate}"
     
     python -u run.py \
         --is_training 1 \
-        --root_path ./dataset/exchange_rate/ \
-        --data_path exchange_rate.csv \
-        --model_id $model_name_str \
+        --root_path ./dataset/traffic/ \
+        --data_path univariate_traffic.csv \
+        --script_name $model_name_str \
         --model $model_name \
         --loss 'DILATE' \
         --alpha_dilate $alpha_dilate \
         --train_epochs 20 \
         --patience 5 \
         --data custom \
-        --features M \
+        --features S \
+        --target '0' \
         --seq_len 96 \
-        --pred_len 48 \
-        --e_layers 2 \
+        --pred_len 96 \
+        --e_layers 4 \
         --d_layers 1 \
         --factor 3 \
-        --enc_in 8 \
-        --dec_in 8 \
-        --c_out 8 \
+        --enc_in 1 \
+        --dec_in 1 \
+        --c_out 1 \
         --d_model 512 \
         --d_ff 512 \
         --des 'Exp' \
-        --batch_size 32 \
-        --learning_rate 0.0001 \
-        --itr 3
+        --batch_size 16 \
+        --learning_rate 0.001 \
+        --itr 1
 
 done
 

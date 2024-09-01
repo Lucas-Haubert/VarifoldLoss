@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
     elif args.loss == 'VARIFOLD':
         if args.number_of_kernels == 1:
-            setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_OneKer_PKer{}_{}_{}_OKer{}_{}_{}_Epo{}_Pat{}_B{}_lr{}'.format(
+            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_PKer{}_{}_{}_OKer{}_{}_{}'.format(
                 args.evaluation_mode,
                 args.script_name,
                 args.model,
@@ -234,13 +234,9 @@ if __name__ == '__main__':
                 args.sigma_s_pos,
                 args.orientation_kernel,
                 args.sigma_t_or,
-                args.sigma_s_or,
-                args.train_epochs,
-                args.patience,
-                args.batch_size,
-                learning_rate_str)
+                args.sigma_s_or)
         elif args.number_of_kernels == 2:
-            setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_TwoKer_PKer_l{}_{}_{}_OKer_l{}_{}_{}_PKer_b{}_{}_{}_OKer_b{}_{}_{}_w_l{}_w_b{}_Epo{}_Pat{}_B{}_lr{}'.format(
+            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Pl{}_{}_{}_Ol{}_{}_{}_Pb{}_{}_{}_Ob{}_{}_{}_w_l{}_w_b{}'.format(
                 args.evaluation_mode,
                 args.script_name,
                 args.model,
@@ -262,11 +258,7 @@ if __name__ == '__main__':
                 args.sigma_t_or_big,
                 args.sigma_s_or_big,
                 args.weight_little,
-                args.weight_big,
-                args.train_epochs,
-                args.patience,
-                args.batch_size,
-                learning_rate_str)
+                args.weight_big)
 
     metrics_results = []
     metrics_on_vali_results = []
@@ -347,6 +339,12 @@ if __name__ == '__main__':
         print('Median metrics on validation dataset:', median_vali_metrics)
         print('Standard deviation of metrics on validation dataset:', std_vali_metrics)
 
+
+
+
+
+
+    # Mettre à part
 
     # Revoir cette partie pour fonction de base de is_training == 0, mais aussi calcul heatmap dessus
     
@@ -435,7 +433,3 @@ if __name__ == '__main__':
         torch.cuda.empty_cache()
 
         """
-
-        
-
-        

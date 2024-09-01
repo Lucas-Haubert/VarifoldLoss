@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=Tuning_hyperparams_noise_robustness_W_96_H_96_LSTM
+#SBATCH --job-name=RobSimpleLSTMVarifold
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
 #SBATCH --gres=gpu:1 
-#SBATCH --partition=gpua100
+#SBATCH --partition=gpu
 
 # Module load
 module load anaconda3/2021.05/gcc-9.2.0
@@ -16,36 +16,25 @@ source activate flexforecast
 # Choose the model
 model_name=LSTM
 
+snr_values=( 20 15 10 5 )
 
-
-hyperparams_list=(
-    "4096 2"
-    "4096 3"
-    "4096 4"
-    "8192 2"
-    "8192 3"
-    "8192 4"
-)
-
-for pair_hyperparam in "${hyperparams_list[@]}"
+for snr in "${snr_values[@]}"
 do
-
-    dmodel=$(echo $pair_hyperparam | cut -d' ' -f1)
-    elayers=$(echo $pair_hyperparam | cut -d' ' -f2)
-    
-    dmodel_str=$(echo $dmodel | sed 's/\./dot/g')
-    elayers_str=$(echo $elayers | sed 's/\./dot/g')
-    
-    script_name_str="Tuning_hyperparams_noise_robustness_W_96_H_96_LSTM_d_model_${dmodel_str}_e_layers_${elayers_str}"
+    script_name_str="RobSimpleLSTMVarifold_${snr}"
     
     python -u run.py \
         --is_training 1 \
         --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_SNR_20.csv \
-        --evaluation_mode 'raw' \
+        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+        --evaluation_mode 'structural' \
         --script_name $script_name_str \
         --model $model_name \
-        --loss 'MSE' \
+        --loss 'VARIFOLD' \
+        --position_kernel 'Gaussian' \
+        --sigma_t_pos 1 \
+        --sigma_s_pos 0.5 \
+        --orientation_kernel 'Distribution' \
         --train_epochs 20 \
         --patience 5 \
         --data custom \
@@ -55,14 +44,177 @@ do
         --pred_len 96 \
         --enc_in 1 \
         --des 'Exp' \
-        --d_model ${dmodel} \
-        --e_layers ${elayers} \
+        --d_model 512 \
+        --e_layers 2 \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
-
+        --itr 5
 done
 
+# d_model_list=( 256 512 126 1024 )
+# e_layers_list=( 3 2 1 )
+
+# for d_model in "${d_model_list[@]}"
+# do
+#     for e_layers in "${e_layers_list[@]}"
+#     do
+#         script_name_str="FractalTuningLSTM_${d_model}_${e_layers}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/synthetic/ \
+#             --data_path Fractal_Config_2_Components_3.csv \
+#             --structural_data_path Fractal_Config_2_Components_3.csv \
+#             --evaluation_mode 'structural' \
+#             --script_name $script_name_str \
+#             --model $model_name \
+#             --loss 'MSE' \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target value \
+#             --seq_len 336 \
+#             --pred_len 336 \
+#             --enc_in 1 \
+#             --des 'Exp' \
+#             --d_model $d_model \
+#             --e_layers $e_layers \
+#             --batch_size 4 \
+#             --learning_rate 0.0001 \
+#             --itr 1
+#     done
+# done
+
+
+
+# snr_values=( 20 15 10 5 )
+
+# for snr in "${snr_values[@]}"
+# do
+#     script_name_str="Rob_Simple_LSTM_VARIFOLD"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'Distribution' \
+#         --sigma_t_or 1 \
+#         --sigma_s_or 1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 2 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'Current' \
+#         --sigma_t_or 1 \
+#         --sigma_s_or 1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 2 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'UnorientedVarifold' \
+#         --sigma_t_or 1 \
+#         --sigma_s_or 1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 2 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'OrientedVarifold' \
+#         --sigma_t_or 1000 \
+#         --sigma_s_or 1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 2 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+# done
+
+            
 
 
 
@@ -71,6 +223,190 @@ done
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# snr_values=( 20 15 10 5 )
+
+# for snr in "${snr_values[@]}"
+# do
+#     script_name_str="Rob_Simple_LSTM_DILATE"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'DILATE' \
+#         --alpha_dilate 0.05 \
+#         --gamma_dilate 0.1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 1 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+#     script_name_str="Rob_Simple_LSTM_MSE"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 512 \
+#         --e_layers 1 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+
+# done
+
+# script_name_str="Rob_LinTrend_LSTM_DILATE_infty"
+    
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/synthetic/ \
+#     --data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#     --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#     --evaluation_mode 'structural' \
+#     --script_name $script_name_str \
+#     --model $model_name \
+#     --loss 'DILATE' \
+#     --alpha_dilate 0.05 \
+#     --gamma_dilate 0.1 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features S \
+#     --target value \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 1 \
+#     --des 'Exp' \
+#     --d_model 512 \
+#     --e_layers 1 \
+#     --batch_size 4 \
+#     --learning_rate 0.0001 \
+#     --itr 1
+
+# script_name_str="Rob_LinTrend_LSTM_MSE_infty"
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/synthetic/ \
+#     --data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#     --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#     --evaluation_mode 'structural' \
+#     --script_name $script_name_str \
+#     --model $model_name \
+#     --loss 'MSE' \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features S \
+#     --target value \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 1 \
+#     --des 'Exp' \
+#     --d_model 512 \
+#     --e_layers 1 \
+#     --batch_size 4 \
+#     --learning_rate 0.0001 \
+#     --itr 1
+
+
+
+
+
+
+
+
+# hyperparams_list=(
+#     "1024 1"
+#     "1024 2"
+#     "1024 3" 
+#     "512 1"
+#     "512 2"
+#     "512 3"
+#     "2048 1"
+#     "2048 2"
+#     "2048 3"
+#     "256 1"
+#     "256 2"
+#     "256 3"
+#     "4096 1"
+#     "4096 2"
+#     "4096 3"
+# )
+
+# for pair_hyperparam in "${hyperparams_list[@]}"
+# do
+
+#     dmodel=$(echo $pair_hyperparam | cut -d' ' -f1)
+#     elayers=$(echo $pair_hyperparam | cut -d' ' -f2)
+    
+#     script_name_str="Tuning_LSTM_Noise_Rob_d_model_${dmodel}_e_layers_${elayers}"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'raw' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model ${dmodel} \
+#         --e_layers ${elayers} \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+
+# done
 
 # python -u run.py \
 #     --is_training 1 \

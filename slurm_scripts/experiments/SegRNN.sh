@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Tuning_DILATE_SegRNN_Exchange_alpha
+#SBATCH --job-name=Tuning_DILATE_SegRNN_Baseline_MSE
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -15,6 +15,437 @@ source activate flexforecast
 
 # Choose the model
 model_name=SegRNN
+
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path traffic.csv \
+    --script_name Tuning_DILATE_SegRNN_traffic_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 168 \
+    --pred_len 24 \
+    --seg_len 24 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.001 \
+    --dropout 0 \
+    --itr 1
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path electricity.csv \
+    --script_name Tuning_DILATE_SegRNN_electricity_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 168 \
+    --pred_len 24 \
+    --seg_len 24 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.001 \
+    --dropout 0 \
+    --itr 1
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path ETTh1.csv \
+    --script_name Tuning_DILATE_SegRNN_ETTh1_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 168 \
+    --pred_len 24 \
+    --seg_len 24 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.0001 \
+    --dropout 0.5 \
+    --itr 1
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path ETTm1.csv \
+    --script_name Tuning_DILATE_SegRNN_ETTm1_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 192 \
+    --pred_len 48 \
+    --seg_len 48 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.0001 \
+    --dropout 0.5 \
+    --itr 1
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path exchange_rate.csv \
+    --script_name Tuning_DILATE_SegRNN_exchange_rate_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 96 \
+    --pred_len 24 \
+    --seg_len 48 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.0001 \
+    --dropout 0.5 \
+    --itr 1
+
+python -u run.py \
+    --is_training 1 \
+    -root_path ./dataset/univariate/ \
+    --data_path weather.csv \
+    --script_name Tuning_DILATE_SegRNN_weather_MSE \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 144 \
+    --pred_len 36 \
+    --seg_len 48 \
+    --e_layers 2 \
+    --d_layers 1 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --d_model 512 \
+    --des 'Exp' \
+    --batch_size 32 \
+    --learning_rate 0.0001 \
+    --dropout 0.5 \
+    --itr 1
+
+
+
+# alpha_dilate_list=( 0.005 0.01 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 )
+# gamma_dilate_list=( 0.1 0.01 1 )
+
+
+# data_path="traffic.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 168 \
+#             --pred_len 24 \
+#             --seg_len 24 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.001 \
+#             --dropout 0 \
+#             --itr 1
+#     done
+# done
+
+
+# data_path="electricity.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 168 \
+#             --pred_len 24 \
+#             --seg_len 24 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.001 \
+#             --dropout 0 \
+#             --itr 1
+#     done
+# done
+
+
+# data_path="ETTh1.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 168 \
+#             --pred_len 24 \
+#             --seg_len 24 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.0001 \
+#             --dropout 0.5 \
+#             --itr 1
+#     done
+# done
+
+
+# data_path="ETTm1.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 192 \
+#             --pred_len 48 \
+#             --seg_len 48 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.0001 \
+#             --dropout 0.5 \
+#             --itr 1
+#     done
+# done
+
+
+# data_path="exchange_rate.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 96 \
+#             --pred_len 24 \
+#             --seg_len 48 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.0001 \
+#             --dropout 0.5 \
+#             --itr 1
+#     done
+# done
+
+
+# data_path="weather.csv"
+
+# for gamma_dilate in "${gamma_dilate_list[@]}"
+# do
+#     for alpha_dilate in "${alpha_dilate_list[@]}"
+#     do
+
+#         model_name_str="Tuning_DILATE_SegRNN_${dataset_path}_${alpha_dilate}_${gamma_dilate}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/univariate/ \
+#             --data_path $data_path \
+#             --script_name $model_name_str \
+#             --model $model_name \
+#             --loss 'DILATE' \
+#             --alpha_dilate $alpha_dilate \
+#             --gamma_dilate $gamma_dilate \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target '0' \
+#             --seq_len 144 \
+#             --pred_len 36 \
+#             --seg_len 48 \
+#             --e_layers 2 \
+#             --d_layers 1 \
+#             --enc_in 1 \
+#             --dec_in 1 \
+#             --c_out 1 \
+#             --d_model 512 \
+#             --des 'Exp' \
+#             --batch_size 32 \
+#             --learning_rate 0.0001 \
+#             --dropout 0.5 \
+#             --itr 1
+#     done
+# done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

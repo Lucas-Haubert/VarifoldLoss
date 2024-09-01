@@ -57,24 +57,6 @@ def OrientationOrientedVarifold(sigma_t, sigma_s, n_dim, dtype=torch.float, devi
     return K
 
 
-# Propositions of adaptations to get close to the article => speak about this with Thibaut
-
-# But even here, the definition of the scalar product is not exactly the same as in the article
-# Notice that the scalar product problem discrepancy is also present on Current and Unoriented
-# It is the same idea, but one have to choose one way
-def OrientationOrientedVarifoldProposal(sigma_t, sigma_s, n_dim, dtype=torch.float, device="cpu"):
-    sigmas = torch.ones((1,1,n_dim), dtype=dtype, device=device)
-    sigmas[0,0,0] /= sigma_t
-    sigmas[0,0,1:] /= sigma_s
-    def K(bx,by):
-        return torch.exp(2*torch.sum(((sigmas*bx)[:,:,None,:] * (sigmas*by)[:,None,:,:]), axis=-1))
-    return K
-
-
-
-
-
-
 # Definition of the kernel to define the loss
 
 position_kernel_dictionary = {"Gaussian": PositionGaussian, "Cauchy": PositionCauchy}
