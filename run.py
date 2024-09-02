@@ -129,7 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_s_or', type=float, default=1)
 
     # Two kernels
-    parser.add_argument('--position_kernel_little', type=str, default="Gaussian", help='Gaussian of Cauchy')
+    parser.add_argument('--position_kernel_little', type=str, default="Gaussian", help='Gaussian or Cauchy')
     parser.add_argument('--sigma_t_pos_little', type=float, default=1)
     parser.add_argument('--sigma_s_pos_little', type=float, default=1)
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     parser.add_argument('--sigma_t_or_little', type=float, default=1)
     parser.add_argument('--sigma_s_or_little', type=float, default=1)
 
-    parser.add_argument('--position_kernel_big', type=str, default="Gaussian", help='Gaussian of Cauchy')
+    parser.add_argument('--position_kernel_big', type=str, default="Gaussian", help='Gaussian or Cauchy')
     parser.add_argument('--sigma_t_pos_big', type=float, default=1)
     parser.add_argument('--sigma_s_pos_big', type=float, default=1)
 
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
     elif args.loss == 'VARIFOLD':
         if args.number_of_kernels == 1:
-            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_PKer{}_{}_{}_OKer{}_{}_{}'.format(
+            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_PKer{}_{}_{}_OKer{}_{}_{}_{}_{}_{}_{}'.format(
                 args.evaluation_mode,
                 args.script_name,
                 args.model,
@@ -234,9 +234,13 @@ if __name__ == '__main__':
                 args.sigma_s_pos,
                 args.orientation_kernel,
                 args.sigma_t_or,
-                args.sigma_s_or)
+                args.sigma_s_or,
+                args.train_epochs,
+                args.patience,
+                args.batch_size,
+                learning_rate_str)
         elif args.number_of_kernels == 2:
-            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Pl{}_{}_{}_Ol{}_{}_{}_Pb{}_{}_{}_Ob{}_{}_{}_w_l{}_w_b{}'.format(
+            setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Pl{}_{}_{}_Ol{}_{}_{}_Pb{}_{}_{}_Ob{}_{}_{}_w_l{}_w_b{}_{}_{}_{}_{}'.format(
                 args.evaluation_mode,
                 args.script_name,
                 args.model,
@@ -258,10 +262,14 @@ if __name__ == '__main__':
                 args.sigma_t_or_big,
                 args.sigma_s_or_big,
                 args.weight_little,
-                args.weight_big)
+                args.weight_big,
+                args.train_epochs,
+                args.patience,
+                args.batch_size,
+                learning_rate_str)
 
     metrics_results = []
-    metrics_on_vali_results = []
+    # metrics_on_vali_results = []
 
     seeds = [2024 + i for i in range(args.itr)]
 
@@ -293,7 +301,7 @@ if __name__ == '__main__':
             end_testing = time.time()
             print("Testing: {} seconds".format(end_testing - start_testing))
 
-            vali_metrics = exp.test_on_vali(setting_iter, test=1)
+            # vali_metrics = exp.test_on_vali(setting_iter, test=1)
 
             if args.do_predict:
                 print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting_iter))
@@ -302,17 +310,17 @@ if __name__ == '__main__':
             torch.cuda.empty_cache()
 
             metrics_results.append(test_metrics)
-            metrics_on_vali_results.append(vali_metrics)
+            # metrics_on_vali_results.append(vali_metrics)
 
         mean_metrics, median_metrics, std_metrics = compute_mean_median_std_metrics(metrics_results)
-        mean_vali_metrics, median_vali_metrics, std_vali_metrics = compute_mean_median_std_metrics(metrics_on_vali_results)
+        # mean_vali_metrics, median_vali_metrics, std_vali_metrics = compute_mean_median_std_metrics(metrics_on_vali_results)
 
         formated_mean_metrics = ", ".join([f"{metric}:{mean_metrics[metric]}" for metric in mean_metrics.keys()])
         formated_median_metrics = ", ".join([f"{metric}:{median_metrics[metric]}" for metric in median_metrics.keys()])
         formated_std_metrics = ", ".join([f"{metric}:{std_metrics[metric]}" for metric in std_metrics.keys()])
-        formated_mean_vali_metrics = ", ".join([f"{metric}:{mean_vali_metrics[metric]}" for metric in mean_vali_metrics.keys()])
-        formated_median_vali_metrics = ", ".join([f"{metric}:{median_vali_metrics[metric]}" for metric in median_vali_metrics.keys()])
-        formated_std_vali_metrics = ", ".join([f"{metric}:{std_vali_metrics[metric]}" for metric in std_vali_metrics.keys()])
+        # formated_mean_vali_metrics = ", ".join([f"{metric}:{mean_vali_metrics[metric]}" for metric in mean_vali_metrics.keys()])
+        # formated_median_vali_metrics = ", ".join([f"{metric}:{median_vali_metrics[metric]}" for metric in median_vali_metrics.keys()])
+        # formated_std_vali_metrics = ", ".join([f"{metric}:{std_vali_metrics[metric]}" for metric in std_vali_metrics.keys()])
 
         folder_path = './new_outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
@@ -325,9 +333,9 @@ if __name__ == '__main__':
             f.write('Mean metrics :' + formated_mean_metrics + '\n')
             f.write('Median metrics :' + formated_median_metrics + '\n')
             f.write('Standard deviation of metrics :' + formated_std_metrics + '\n')
-            f.write('Mean metrics on validation dataset :' + formated_mean_vali_metrics + '\n')
-            f.write('Median metrics on validation dataset :' + formated_median_vali_metrics + '\n')
-            f.write('Standard deviation of metrics on validation dataset :' + formated_std_vali_metrics + '\n')
+            # f.write('Mean metrics on validation dataset :' + formated_mean_vali_metrics + '\n')
+            # f.write('Median metrics on validation dataset :' + formated_median_vali_metrics + '\n')
+            # f.write('Standard deviation of metrics on validation dataset :' + formated_std_vali_metrics + '\n')
             f.write('\n')
             f.write('\n')
 
@@ -335,9 +343,9 @@ if __name__ == '__main__':
         print('Median metrics:', median_metrics)
         print('Standard deviation of metrics:', std_metrics)
 
-        print('Mean metrics on validation dataset:', mean_vali_metrics)
-        print('Median metrics on validation dataset:', median_vali_metrics)
-        print('Standard deviation of metrics on validation dataset:', std_vali_metrics)
+        # print('Mean metrics on validation dataset:', mean_vali_metrics)
+        # print('Median metrics on validation dataset:', median_vali_metrics)
+        # print('Standard deviation of metrics on validation dataset:', std_vali_metrics)
 
 
 

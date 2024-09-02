@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Tuning_DILATE_iTransformer_Traffic
+#SBATCH --job-name=Tuning_sigma_s_pos
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -18,15 +18,12 @@ source activate flexforecast
 model_name=iTransformer
 
 
-alpha_dilate_list=( 0.8 0 0.2 0.5 1 )
+sigma_s_pos=( 0.25 0.5 1 2 5 10 )
 
-
-for alpha_dilate in "${alpha_dilate_list[@]}"
+for sigma_s_pos in "${sigma_s_pos[@]}"
 do
     
-    alpha_dilate_name=$(echo $alpha_dilate | tr '.' 'dot')
-    
-    model_name_str="Tuning_DILATE_iTransformer_Traffic_alpha_${alpha_dilate}"
+    model_name_str="TuningiTrans_sigma_s_pos_${sigma_s_pos}"
     
     python -u run.py \
         --is_training 1 \
@@ -34,8 +31,10 @@ do
         --data_path univariate_traffic.csv \
         --script_name $model_name_str \
         --model $model_name \
-        --loss 'DILATE' \
-        --alpha_dilate $alpha_dilate \
+        --loss 'VARIFOLD' \
+        --position_kernel 'Gaussian' \
+        --sigma_t_pos 1 \
+        --sigma_s_pos $sigma_s_pos \
         --train_epochs 20 \
         --patience 5 \
         --data custom \
@@ -55,9 +54,7 @@ do
         --batch_size 16 \
         --learning_rate 0.001 \
         --itr 1
-
 done
-
 
 
 
