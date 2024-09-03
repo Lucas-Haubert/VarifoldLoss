@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Fractal5iter
+#SBATCH --job-name=VARIFOLDNoiseRobSimple
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4 
@@ -15,6 +15,344 @@ source activate flexforecast
 
 # Choose the model
 model_name=MLP
+
+snr_values=( 20 15 10 5 )
+
+for snr in "${snr_values[@]}"
+do
+
+    script_name_str="Noise_Rob_${snr}"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'VARIFOLD' \
+        --position_kernel 'Gaussian' \
+        --sigma_t_pos 1 \
+        --sigma_s_pos 0.5 \
+        --orientation_kernel 'Distribution' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --enc_in 1 \
+        --des 'Exp' \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+
+done
+
+
+
+
+
+
+# Choose the model
+model_name=LSTM
+
+snr_values=( 20 15 10 5 )
+
+for snr in "${snr_values[@]}"
+do
+
+    script_name_str="Noise_Rob_${snr}"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'VARIFOLD' \
+        --position_kernel 'Gaussian' \
+        --sigma_t_pos 1 \
+        --sigma_s_pos 0.5 \
+        --orientation_kernel 'Distribution' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --enc_in 1 \
+        --d_model 512 \
+        --e_layers 1 \
+        --des 'Exp' \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+
+done
+
+
+
+
+
+
+# Choose the model
+model_name=TCN
+
+snr_values=( 20 15 10 5 )
+
+for snr in "${snr_values[@]}"
+do
+
+    script_name_str="Noise_Rob_${snr}"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'VARIFOLD' \
+        --position_kernel 'Gaussian' \
+        --sigma_t_pos 1 \
+        --sigma_s_pos 0.5 \
+        --orientation_kernel 'Distribution' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --enc_in 1 \
+        --out_dim_first_layer 64 \
+        --e_layers 4 \
+        --fixed_kernel_size_tcn 3 \
+        --des 'Exp' \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# sigma_t_pos_values=(5 10 50 100)
+# sigma_s_pos_values=(0.05 0.1 0.25 0.5 1 2 5 10 25 50 100 200 500)
+
+# for sigma_t_pos in "${sigma_t_pos_values[@]}"
+# do
+#     for sigma_s_pos in "${sigma_s_pos_values[@]}"
+#     do
+#         script_name_str="Heatmap_${sigma_t_pos}_${sigma_s_pos}"
+        
+#         python -u run.py \
+#             --is_training 1 \
+#             --root_path ./dataset/synthetic/ \
+#             --data_path Fractal_Config_2_Components_3.csv \
+#             --structural_data_path Fractal_Config_2_Components_3.csv \
+#             --evaluation_mode 'structural' \
+#             --script_name $script_name_str \
+#             --model $model_name \
+#             --loss 'VARIFOLD' \
+#             --position_kernel 'Gaussian' \
+#             --sigma_t_pos $sigma_t_pos \
+#             --sigma_s_pos $sigma_s_pos \
+#             --orientation_kernel 'Distribution' \
+#             --train_epochs 20 \
+#             --patience 5 \
+#             --data custom \
+#             --features S \
+#             --target value \
+#             --seq_len 336 \
+#             --pred_len 336 \
+#             --enc_in 1 \
+#             --des 'Exp' \
+#             --d_model 4096 \
+#             --batch_size 4 \
+#             --learning_rate 0.0001 \
+#             --itr 1
+#     done
+# done
+
+
+
+
+# snr_values=( 20 15 10 5 )
+
+# for snr in "${snr_values[@]}"
+# do
+#     script_name_str="Rob_Simple_MLP_DILATE"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'DILATE' \
+#         --alpha_dilate 0.05 \
+#         --gamma_dilate 0.1 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 1024 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+
+#     script_name_str="Rob_Simple_MLP_MSE"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'MSE' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --d_model 1024 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 1
+
+# done
+
+
+
+
 
 
 # script_name_str="FractalAccurary_1_05"
@@ -104,92 +442,92 @@ model_name=MLP
 #     --learning_rate 0.0001 \
 #     --itr 5
 
-script_name_str="FractalCut_f2_10_10"
+# script_name_str="FractalCut_f2_10_10"
 
-python -u run.py \
-    --is_training 1 \
-    --root_path ./dataset/synthetic/ \
-    --data_path Fractal_Config_2_Components_3.csv \
-    --structural_data_path Fractal_Config_2_Components_2.csv \
-    --evaluation_mode 'structural' \
-    --script_name $script_name_str \
-    --model $model_name \
-    --loss 'VARIFOLD' \
-    --position_kernel 'Gaussian' \
-    --sigma_t_pos 10 \
-    --sigma_s_pos 10 \
-    --orientation_kernel 'Distribution' \
-    --train_epochs 20 \
-    --patience 5 \
-    --data custom \
-    --features S \
-    --target value \
-    --seq_len 336 \
-    --pred_len 336 \
-    --enc_in 1 \
-    --des 'Exp' \
-    --d_model 4096 \
-    --batch_size 4 \
-    --learning_rate 0.0001 \
-    --itr 5
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/synthetic/ \
+#     --data_path Fractal_Config_2_Components_3.csv \
+#     --structural_data_path Fractal_Config_2_Components_2.csv \
+#     --evaluation_mode 'structural' \
+#     --script_name $script_name_str \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --position_kernel 'Gaussian' \
+#     --sigma_t_pos 10 \
+#     --sigma_s_pos 10 \
+#     --orientation_kernel 'Distribution' \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features S \
+#     --target value \
+#     --seq_len 336 \
+#     --pred_len 336 \
+#     --enc_in 1 \
+#     --des 'Exp' \
+#     --d_model 4096 \
+#     --batch_size 4 \
+#     --learning_rate 0.0001 \
+#     --itr 5
 
-script_name_str="FractalCut_f1_100_50"
+# script_name_str="FractalCut_f1_100_50"
 
-python -u run.py \
-    --is_training 1 \
-    --root_path ./dataset/synthetic/ \
-    --data_path Fractal_Config_2_Components_3.csv \
-    --structural_data_path Fractal_Config_2_Components_1.csv \
-    --evaluation_mode 'structural' \
-    --script_name $script_name_str \
-    --model $model_name \
-    --loss 'VARIFOLD' \
-    --position_kernel 'Gaussian' \
-    --sigma_t_pos 100 \
-    --sigma_s_pos 50 \
-    --orientation_kernel 'Distribution' \
-    --train_epochs 20 \
-    --patience 5 \
-    --data custom \
-    --features S \
-    --target value \
-    --seq_len 336 \
-    --pred_len 336 \
-    --enc_in 1 \
-    --des 'Exp' \
-    --d_model 4096 \
-    --batch_size 4 \
-    --learning_rate 0.0001 \
-    --itr 5
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/synthetic/ \
+#     --data_path Fractal_Config_2_Components_3.csv \
+#     --structural_data_path Fractal_Config_2_Components_1.csv \
+#     --evaluation_mode 'structural' \
+#     --script_name $script_name_str \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --position_kernel 'Gaussian' \
+#     --sigma_t_pos 100 \
+#     --sigma_s_pos 50 \
+#     --orientation_kernel 'Distribution' \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features S \
+#     --target value \
+#     --seq_len 336 \
+#     --pred_len 336 \
+#     --enc_in 1 \
+#     --des 'Exp' \
+#     --d_model 4096 \
+#     --batch_size 4 \
+#     --learning_rate 0.0001 \
+#     --itr 5
 
-script_name_str="FractalCut_f1_100_100"
+# script_name_str="FractalCut_f1_100_100"
 
-python -u run.py \
-    --is_training 1 \
-    --root_path ./dataset/synthetic/ \
-    --data_path Fractal_Config_2_Components_3.csv \
-    --structural_data_path Fractal_Config_2_Components_1.csv \
-    --evaluation_mode 'structural' \
-    --script_name $script_name_str \
-    --model $model_name \
-    --loss 'VARIFOLD' \
-    --position_kernel 'Gaussian' \
-    --sigma_t_pos 100 \
-    --sigma_s_pos 100 \
-    --orientation_kernel 'Distribution' \
-    --train_epochs 20 \
-    --patience 5 \
-    --data custom \
-    --features S \
-    --target value \
-    --seq_len 336 \
-    --pred_len 336 \
-    --enc_in 1 \
-    --des 'Exp' \
-    --d_model 4096 \
-    --batch_size 4 \
-    --learning_rate 0.0001 \
-    --itr 5
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/synthetic/ \
+#     --data_path Fractal_Config_2_Components_3.csv \
+#     --structural_data_path Fractal_Config_2_Components_1.csv \
+#     --evaluation_mode 'structural' \
+#     --script_name $script_name_str \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --position_kernel 'Gaussian' \
+#     --sigma_t_pos 100 \
+#     --sigma_s_pos 100 \
+#     --orientation_kernel 'Distribution' \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features S \
+#     --target value \
+#     --seq_len 336 \
+#     --pred_len 336 \
+#     --enc_in 1 \
+#     --des 'Exp' \
+#     --d_model 4096 \
+#     --batch_size 4 \
+#     --learning_rate 0.0001 \
+#     --itr 5
     
 
 
@@ -486,63 +824,7 @@ python -u run.py \
 
 
 
-# snr_values=( 20 15 10 5 )
 
-# for snr in "${snr_values[@]}"
-# do
-#     script_name_str="Rob_Simple_MLP_DILATE"
-    
-#     python -u run.py \
-#         --is_training 1 \
-#         --root_path ./dataset/synthetic/ \
-#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
-#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
-#         --evaluation_mode 'structural' \
-#         --script_name $script_name_str \
-#         --model $model_name \
-#         --loss 'DILATE' \
-#         --alpha_dilate 0.05 \
-#         --gamma_dilate 0.1 \
-#         --train_epochs 20 \
-#         --patience 5 \
-#         --data custom \
-#         --features S \
-#         --target value \
-#         --seq_len 96 \
-#         --pred_len 96 \
-#         --enc_in 1 \
-#         --des 'Exp' \
-#         --d_model 1024 \
-#         --batch_size 4 \
-#         --learning_rate 0.0001 \
-#         --itr 5
-
-#     script_name_str="Rob_Simple_MLP_MSE"
-    
-#     python -u run.py \
-#         --is_training 1 \
-#         --root_path ./dataset/synthetic/ \
-#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
-#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
-#         --evaluation_mode 'structural' \
-#         --script_name $script_name_str \
-#         --model $model_name \
-#         --loss 'MSE' \
-#         --train_epochs 20 \
-#         --patience 5 \
-#         --data custom \
-#         --features S \
-#         --target value \
-#         --seq_len 96 \
-#         --pred_len 96 \
-#         --enc_in 1 \
-#         --des 'Exp' \
-#         --d_model 1024 \
-#         --batch_size 4 \
-#         --learning_rate 0.0001 \
-#         --itr 5
-
-# done
 
 
 

@@ -40,9 +40,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot001)', 'rFFT_(0dot005_0dot007)', 'rFFT_(0dot04_0dot06)', 'rFFT_(0dot37_0dot4)', 'rSE'] # Fractal_Config_1
         # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot01)', 'rFFT_(0dot01_0dot03)', 'rFFT_(0dot175_0dot225)', 'rSE'] # Fractal_Config_2
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot005)', 'rFFT_(0dot005_0dot1)', 'rFFT_(0dot1_0dot2)', 'rFFT_(0dot1_0dot5)', 'rSE'] # pour noise robustness
+        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot005)', 'rFFT_(0dot005_0dot1)', 'rFFT_(0dot1_0dot2)', 'rFFT_(0dot1_0dot5)', 'rSE'] # pour noise robustness
         # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI'] # DILATE real-world sans freq
-        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot05)', 'rFFT_(0dot05_0dot175)', 'rFFT_(0dot175_0dot225)', 'rFFT_(0dot175_0dot5)', 'rSE'] # Per_Sigmoid
+        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot05)', 'rFFT_(0dot05_0dot175)', 'rFFT_(0dot175_0dot225)', 'rFFT_(0dot175_0dot5)', 'rSE'] # Per_Sigmoid
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
 
         self.gains_test_loss = []

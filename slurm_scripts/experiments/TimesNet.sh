@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=TUESDAY_MEETING_TimesNet_electricity_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_32_lr_0dot0001
+#SBATCH --job-name=TuningOnMSERealWorldTimesNet
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -13,9 +13,147 @@ module load cuda/11.4.0/intel-20.0.2
 # Activate anaconda environment code
 source activate flexforecast
 
-
 # Choose the model
 model_name=TimesNet
+
+script_name_str="TuningOnMSE_TimesNet_ETTh1_d_model_16_d_ff_32"
+
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path ETTh1.csv \
+    --script_name $script_name_str \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 96 \
+    --pred_len 96 \
+    --factor 3 \
+    --e_layers 2 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --des 'Exp' \
+    --d_model 16 \
+    --d_ff 32 \
+    --top_k 5 \
+    --batch_size 4 \
+    --learning_rate 0.0001 \
+    --itr 1
+
+script_name_str="TuningOnMSE_TimesNet_ETTh1_d_model_32_d_ff_64"
+    
+python -u run.py \
+    --is_training 1 \
+    --root_path ./dataset/univariate/ \
+    --data_path ETTh1.csv \
+    --script_name $script_name_str \
+    --model $model_name \
+    --loss 'MSE' \
+    --train_epochs 20 \
+    --patience 5 \
+    --data custom \
+    --features S \
+    --target '0' \
+    --seq_len 96 \
+    --pred_len 96 \
+    --factor 3 \
+    --e_layers 2 \
+    --enc_in 1 \
+    --dec_in 1 \
+    --c_out 1 \
+    --des 'Exp' \
+    --d_model 32 \
+    --d_ff 64 \
+    --top_k 5 \
+    --batch_size 4 \
+    --learning_rate 0.0001 \
+    --itr 1
+
+
+d_model_list=(256 512)
+d_ff_list=(256 512)
+
+for i in "${!d_model_list[@]}"
+do
+    d_model=${d_model_list[$i]}
+    d_ff=${d_ff_list[$i]}
+
+    script_name_str="TuningOnMSE_TimesNet_traffic_d_model_${d_model}_d_ff_${d_ff}"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/univariate/ \
+        --data_path traffic.csv \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'MSE' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target '0' \
+        --seq_len 96 \
+        --pred_len 96 \
+        --factor 3 \
+        --e_layers 2 \
+        --enc_in 1 \
+        --dec_in 1 \
+        --c_out 1 \
+        --des 'Exp' \
+        --d_model $d_model \
+        --d_ff $d_ff \
+        --top_k 5 \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+
+    script_name_str="TuningOnMSE_TimesNet_ETTh1_d_model_${d_model}_d_ff_${d_ff}"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/univariate/ \
+        --data_path ETTh1.csv \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'MSE' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target '0' \
+        --seq_len 96 \
+        --pred_len 96 \
+        --factor 3 \
+        --e_layers 2 \
+        --enc_in 1 \
+        --dec_in 1 \
+        --c_out 1 \
+        --des 'Exp' \
+        --d_model $d_model \
+        --d_ff $d_ff \
+        --top_k 5 \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # For Tuesday meeting
@@ -174,37 +312,37 @@ model_name=TimesNet
 #   --learning_rate 0.0001 \
 #   --itr 1
 
-# TimesNet - electricity - VARIFOLD
-python -u run.py \
-  --is_training 1 \
-  --root_path ./dataset/electricity/ \
-  --data_path electricity.csv \
-  --model_id TUESDAY_MEETING_TimesNet_electricity_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_32_lr_0dot0001 \
-  --model $model_name \
-  --loss 'VARIFOLD' \
-  --or_kernel 'Gaussian' \
-  --sigma_t_1 1 \
-  --sigma_t_2 1 \
-  --sigma_s_1 8.9 \
-  --sigma_s_2 8.9 \
-  --train_epochs 20 \
-  --patience 5 \
-  --data custom \
-  --features M \
-  --seq_len 96 \
-  --pred_len 96 \
-  --factor 3 \
-  --e_layers 2 \
-  --enc_in 321 \
-  --dec_in 321 \
-  --c_out 321 \
-  --des 'Exp' \
-  --d_model 256 \
-  --d_ff 512 \
-  --top_k 5 \
-  --batch_size 32 \
-  --learning_rate 0.0001 \
-  --itr 1
+# # TimesNet - electricity - VARIFOLD
+# python -u run.py \
+#   --is_training 1 \
+#   --root_path ./dataset/electricity/ \
+#   --data_path electricity.csv \
+#   --model_id TUESDAY_MEETING_TimesNet_electricity_VARIFOLD_sigma_1_1_05sqrt_05sqrt_B_32_lr_0dot0001 \
+#   --model $model_name \
+#   --loss 'VARIFOLD' \
+#   --or_kernel 'Gaussian' \
+#   --sigma_t_1 1 \
+#   --sigma_t_2 1 \
+#   --sigma_s_1 8.9 \
+#   --sigma_s_2 8.9 \
+#   --train_epochs 20 \
+#   --patience 5 \
+#   --data custom \
+#   --features M \
+#   --seq_len 96 \
+#   --pred_len 96 \
+#   --factor 3 \
+#   --e_layers 2 \
+#   --enc_in 321 \
+#   --dec_in 321 \
+#   --c_out 321 \
+#   --des 'Exp' \
+#   --d_model 256 \
+#   --d_ff 512 \
+#   --top_k 5 \
+#   --batch_size 32 \
+#   --learning_rate 0.0001 \
+#   --itr 1
 
 
 

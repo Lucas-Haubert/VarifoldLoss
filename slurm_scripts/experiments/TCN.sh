@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=RobSimpleTCNVarifold
+#SBATCH --job-name=DILATENoiseRobSimpleTCN
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -20,7 +20,7 @@ snr_values=( 20 15 10 5 )
 
 for snr in "${snr_values[@]}"
 do
-    script_name_str="RobSimpleTCNVarifold_${snr}"
+    script_name_str="Rob_Simple_TCN_DILATE"
     
     python -u run.py \
         --is_training 1 \
@@ -30,11 +30,9 @@ do
         --evaluation_mode 'structural' \
         --script_name $script_name_str \
         --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 0.5 \
-        --orientation_kernel 'Distribution' \
+        --loss 'DILATE' \
+        --alpha_dilate 0.05 \
+        --gamma_dilate 0.1 \
         --train_epochs 20 \
         --patience 5 \
         --data custom \
@@ -49,8 +47,76 @@ do
         --fixed_kernel_size_tcn 3 \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 5
+        --itr 1
+
+    script_name_str="Rob_Simple_TCN_MSE"
+    
+    python -u run.py \
+        --is_training 1 \
+        --root_path ./dataset/synthetic/ \
+        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+        --evaluation_mode 'structural' \
+        --script_name $script_name_str \
+        --model $model_name \
+        --loss 'MSE' \
+        --train_epochs 20 \
+        --patience 5 \
+        --data custom \
+        --features S \
+        --target value \
+        --seq_len 96 \
+        --pred_len 96 \
+        --enc_in 1 \
+        --des 'Exp' \
+        --out_dim_first_layer 64 \
+        --e_layers 4 \
+        --fixed_kernel_size_tcn 3 \
+        --batch_size 4 \
+        --learning_rate 0.0001 \
+        --itr 1
+
 done
+
+
+
+
+
+# snr_values=( 20 15 10 5 )
+
+# for snr in "${snr_values[@]}"
+# do
+#     script_name_str="RobSimpleTCNVarifold_${snr}"
+    
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'Distribution' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --out_dim_first_layer 64 \
+#         --e_layers 4 \
+#         --fixed_kernel_size_tcn 3 \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
+# done
 
 
 
@@ -184,67 +250,7 @@ done
 
 
 
-# snr_values=( 20 15 10 5 )
 
-# for snr in "${snr_values[@]}"
-# do
-#     script_name_str="Rob_Simple_TCN_DILATE"
-    
-#     python -u run.py \
-#         --is_training 1 \
-#         --root_path ./dataset/synthetic/ \
-#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
-#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
-#         --evaluation_mode 'structural' \
-#         --script_name $script_name_str \
-#         --model $model_name \
-#         --loss 'DILATE' \
-#         --alpha_dilate 0.05 \
-#         --gamma_dilate 0.1 \
-#         --train_epochs 20 \
-#         --patience 5 \
-#         --data custom \
-#         --features S \
-#         --target value \
-#         --seq_len 96 \
-#         --pred_len 96 \
-#         --enc_in 1 \
-#         --des 'Exp' \
-#         --out_dim_first_layer 64 \
-#         --e_layers 4 \
-#         --fixed_kernel_size_tcn 3 \
-#         --batch_size 4 \
-#         --learning_rate 0.0001 \
-#         --itr 5
-
-#     script_name_str="Rob_Simple_TCN_MSE"
-    
-#     python -u run.py \
-#         --is_training 1 \
-#         --root_path ./dataset/synthetic/ \
-#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
-#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
-#         --evaluation_mode 'structural' \
-#         --script_name $script_name_str \
-#         --model $model_name \
-#         --loss 'MSE' \
-#         --train_epochs 20 \
-#         --patience 5 \
-#         --data custom \
-#         --features S \
-#         --target value \
-#         --seq_len 96 \
-#         --pred_len 96 \
-#         --enc_in 1 \
-#         --des 'Exp' \
-#         --out_dim_first_layer 64 \
-#         --e_layers 4 \
-#         --fixed_kernel_size_tcn 3 \
-#         --batch_size 4 \
-#         --learning_rate 0.0001 \
-#         --itr 5
-
-# done
 
 # script_name_str="Rob_LinTrend_TCN_DILATE_infty"
     

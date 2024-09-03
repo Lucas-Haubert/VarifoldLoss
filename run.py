@@ -109,7 +109,8 @@ if __name__ == '__main__':
                                                                            'you can select [partial_start_index, min(enc_in + partial_start_index, N)]')
 
     # DILATE
-    parser.add_argument('--alpha_dilate', type=float, default=0.5, help='alpha in dilate loss')
+    parser.add_argument('--alpha_dilate', type=float, default=0.05, help='alpha in dilate loss')
+    parser.add_argument('--gamma_dilate', type=float, default=0.1, help='gamma in dilate loss')
 
     # TILDE-Q
     parser.add_argument('--alpha_tildeq', type=float, default=0.5)
@@ -118,7 +119,7 @@ if __name__ == '__main__':
     # VARIFOLD
 
     # One kernel or two kernels in a sum
-    parser.add_argument('--number_of_kernels', type=int, default=1, help='2 if sum of kernels)')
+    parser.add_argument('--number_of_kernels', type=int, default=1, help='number of kernels to define the varifold loss)')
 
     # One kernel
     parser.add_argument('--position_kernel', type=str, default="Gaussian", help='Gaussian of Cauchy, for OneKernel')
@@ -171,7 +172,7 @@ if __name__ == '__main__':
     learning_rate_str = str(args.learning_rate).replace('.', 'dot')
 
     if args.loss == 'MSE':
-                setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Epo{}_Pat{}_B{}_lr{}'.format(
+                setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Epo{}_Pat{}_B{}_lr{}'.format(
                     args.evaluation_mode,
                     args.script_name,
                     args.model,
@@ -186,7 +187,7 @@ if __name__ == '__main__':
                     learning_rate_str)
 
     elif args.loss == 'DILATE':
-        setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Epo{}_Pat{}_B{}_lr{}'.format(
+        setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Epo{}_Pat{}_B{}_lr{}'.format(
             args.evaluation_mode,
             args.script_name,
             args.model,
@@ -202,7 +203,7 @@ if __name__ == '__main__':
             learning_rate_str)
 
     elif args.loss == 'TILDEQ':
-        setting = 'evalmode_{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Gamma{}_Epo{}_Pat{}_B{}_lr{}'.format(
+        setting = '{}_{}_{}_{}_ft{}_W{}_H{}_Loss{}_Alpha{}_Gamma{}_Epo{}_Pat{}_B{}_lr{}'.format(
             args.evaluation_mode,
             args.script_name,
             args.model,
