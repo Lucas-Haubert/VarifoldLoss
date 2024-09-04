@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=VARIFOLDNoiseRobSimple
+#SBATCH --job-name=VARIFOLDNoiseRobSimple5iter
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4 
@@ -13,43 +13,43 @@ module load cuda/11.4.0/intel-20.0.2
 # Activate anaconda environment code
 source activate flexforecast
 
-# Choose the model
-model_name=MLP
+# # Choose the model
+# model_name=MLP
 
-snr_values=( 20 15 10 5 )
+# snr_values=( 20 15 10 5 )
 
-for snr in "${snr_values[@]}"
-do
+# for snr in "${snr_values[@]}"
+# do
 
-    script_name_str="Noise_Rob_${snr}"
+#     script_name_str="Noise_Rob_${snr}"
     
-    python -u run.py \
-        --is_training 1 \
-        --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
-        --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
-        --evaluation_mode 'structural' \
-        --script_name $script_name_str \
-        --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 0.5 \
-        --orientation_kernel 'Distribution' \
-        --train_epochs 20 \
-        --patience 5 \
-        --data custom \
-        --features S \
-        --target value \
-        --seq_len 96 \
-        --pred_len 96 \
-        --enc_in 1 \
-        --des 'Exp' \
-        --batch_size 4 \
-        --learning_rate 0.0001 \
-        --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_Simple_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_Simple_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 0.5 \
+#         --orientation_kernel 'Distribution' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --des 'Exp' \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
 
-done
+# done
 
 
 
@@ -59,7 +59,7 @@ done
 # Choose the model
 model_name=LSTM
 
-snr_values=( 20 15 10 5 )
+snr_values=( 20 15 )
 
 for snr in "${snr_values[@]}"
 do
@@ -92,7 +92,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
 done
 
@@ -138,7 +138,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
 done
 

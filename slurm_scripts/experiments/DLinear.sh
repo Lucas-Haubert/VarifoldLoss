@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=VARIFOLDNoiseRobLinTrend
+#SBATCH --job-name=VARIFOLDNoiseRobLinTrend5iter
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -47,7 +47,7 @@ source activate flexforecast
 #         --des 'Exp' \
 #         --batch_size 4 \
 #         --learning_rate 0.0001 \
-#         --itr 1
+#         --itr 5
 
 #     python -u run.py \
 #         --is_training 1 \
@@ -75,7 +75,7 @@ source activate flexforecast
 #         --des 'Exp' \
 #         --batch_size 4 \
 #         --learning_rate 0.0001 \
-#         --itr 1
+#         --itr 5
 
 #     python -u run.py \
 #         --is_training 1 \
@@ -103,7 +103,7 @@ source activate flexforecast
 #         --des 'Exp' \
 #         --batch_size 4 \
 #         --learning_rate 0.0001 \
-#         --itr 1
+#         --itr 5
 
 #     python -u run.py \
 #         --is_training 1 \
@@ -131,7 +131,7 @@ source activate flexforecast
 #         --des 'Exp' \
 #         --batch_size 4 \
 #         --learning_rate 0.0001 \
-#         --itr 1
+#         --itr 5
 
 # done
 
@@ -140,135 +140,135 @@ source activate flexforecast
 
 
 
-# Choose the model
-model_name=TrendLSTM
+# # Choose the model
+# model_name=TrendLSTM
 
-snr_values=( 10 5 )
+# snr_values=( 20 15 10 5 )
 
-for snr in "${snr_values[@]}"
-do
+# for snr in "${snr_values[@]}"
+# do
 
-    script_name_str="Noise_Rob_${snr}"
+#     script_name_str="Noise_Rob_${snr}"
     
-    python -u run.py \
-        --is_training 1 \
-        --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
-        --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
-        --evaluation_mode 'structural' \
-        --script_name $script_name_str \
-        --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 16 \
-        --orientation_kernel 'Distribution' \
-        --train_epochs 20 \
-        --patience 5 \
-        --data custom \
-        --features S \
-        --target value \
-        --seq_len 96 \
-        --pred_len 96 \
-        --enc_in 1 \
-        --d_model 256 \
-        --e_layers 3 \
-        --des 'Exp' \
-        --batch_size 4 \
-        --learning_rate 0.0001 \
-        --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 16 \
+#         --orientation_kernel 'Distribution' \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --d_model 256 \
+#         --e_layers 3 \
+#         --des 'Exp' \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
 
-    python -u run.py \
-        --is_training 1 \
-        --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
-        --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
-        --evaluation_mode 'structural' \
-        --script_name $script_name_str \
-        --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 16 \
-        --orientation_kernel 'Current' \
-        --sigma_t_or 1 \
-        --sigma_s_or 5 \
-        --train_epochs 20 \
-        --patience 5 \
-        --data custom \
-        --features S \
-        --target value \
-        --seq_len 96 \
-        --pred_len 96 \
-        --enc_in 1 \
-        --d_model 256 \
-        --e_layers 3 \
-        --des 'Exp' \
-        --batch_size 4 \
-        --learning_rate 0.0001 \
-        --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 16 \
+#         --orientation_kernel 'Current' \
+#         --sigma_t_or 1 \
+#         --sigma_s_or 5 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --d_model 256 \
+#         --e_layers 3 \
+#         --des 'Exp' \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
 
-    python -u run.py \
-        --is_training 1 \
-        --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
-        --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
-        --evaluation_mode 'structural' \
-        --script_name $script_name_str \
-        --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 16 \
-        --orientation_kernel 'UnorientedVarifold' \
-        --sigma_t_or 1 \
-        --sigma_s_or 10 \
-        --train_epochs 20 \
-        --patience 5 \
-        --data custom \
-        --features S \
-        --target value \
-        --seq_len 96 \
-        --pred_len 96 \
-        --enc_in 1 \
-        --d_model 256 \
-        --e_layers 3 \
-        --des 'Exp' \
-        --batch_size 4 \
-        --learning_rate 0.0001 \
-        --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 16 \
+#         --orientation_kernel 'UnorientedVarifold' \
+#         --sigma_t_or 1 \
+#         --sigma_s_or 10 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --d_model 256 \
+#         --e_layers 3 \
+#         --des 'Exp' \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
 
-    python -u run.py \
-        --is_training 1 \
-        --root_path ./dataset/synthetic/ \
-        --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
-        --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
-        --evaluation_mode 'structural' \
-        --script_name $script_name_str \
-        --model $model_name \
-        --loss 'VARIFOLD' \
-        --position_kernel 'Gaussian' \
-        --sigma_t_pos 1 \
-        --sigma_s_pos 16 \
-        --orientation_kernel 'OrientedVarifold' \
-        --sigma_t_or 1000 \
-        --sigma_s_or 10 \
-        --train_epochs 20 \
-        --patience 5 \
-        --data custom \
-        --features S \
-        --target value \
-        --seq_len 96 \
-        --pred_len 96 \
-        --enc_in 1 \
-        --d_model 256 \
-        --e_layers 3 \
-        --des 'Exp' \
-        --batch_size 4 \
-        --learning_rate 0.0001 \
-        --itr 1
+#     python -u run.py \
+#         --is_training 1 \
+#         --root_path ./dataset/synthetic/ \
+#         --data_path Noise_Robustness_LinTrend_SNR_${snr}.csv \
+#         --structural_data_path Noise_Robustness_LinTrend_SNR_infty.csv \
+#         --evaluation_mode 'structural' \
+#         --script_name $script_name_str \
+#         --model $model_name \
+#         --loss 'VARIFOLD' \
+#         --position_kernel 'Gaussian' \
+#         --sigma_t_pos 1 \
+#         --sigma_s_pos 16 \
+#         --orientation_kernel 'OrientedVarifold' \
+#         --sigma_t_or 1000 \
+#         --sigma_s_or 10 \
+#         --train_epochs 20 \
+#         --patience 5 \
+#         --data custom \
+#         --features S \
+#         --target value \
+#         --seq_len 96 \
+#         --pred_len 96 \
+#         --enc_in 1 \
+#         --d_model 256 \
+#         --e_layers 3 \
+#         --des 'Exp' \
+#         --batch_size 4 \
+#         --learning_rate 0.0001 \
+#         --itr 5
 
-done
+# done
 
 
 
@@ -312,7 +312,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
     python -u run.py \
         --is_training 1 \
@@ -343,7 +343,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
     python -u run.py \
         --is_training 1 \
@@ -374,7 +374,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
     python -u run.py \
         --is_training 1 \
@@ -405,7 +405,7 @@ do
         --des 'Exp' \
         --batch_size 4 \
         --learning_rate 0.0001 \
-        --itr 1
+        --itr 5
 
 done
 
