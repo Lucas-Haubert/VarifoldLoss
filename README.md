@@ -5,7 +5,7 @@
 
 This repository is the official PyTorch implementation of the Varifold Loss, a shape-based loss function for training deep neural networks to perform time series forecasting. It aims at providing an easy-to-use pipeline where datasets, models, or loss functions can be easily swapped, with a particular emphasis on the latter, which are central to this project.
 
-This work is the result of my research internship for the MVA Master's program at ENS Paris-Saclay, within the Signal Processing team at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
+This work is the result of my research internship for the MVA Master's program at ENS Paris-Saclay, within the Signal Processing team at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en) of the École Normale Supérieure de Paris-Saclay.
 
 
 ## Contact
