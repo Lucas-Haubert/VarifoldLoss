@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=UpdatedMultivariateAutoformer1
+#SBATCH --job-name=UpdatedMultivariate
 #SBATCH --output=new_slurm_outputs/%x.job_%j
 #SBATCH --time=24:00:00
 #SBATCH --ntasks=4
@@ -14,357 +14,20 @@ module load cuda/11.4.0/intel-20.0.2
 source activate flexforecast
 
 
-#Choose the model
-model_name=Autoformer
+# >>>>>>>>>>>>> BEGINNING OF THE LAST SCRIPTS TO RUN <<<<<<<<<<<<
 
-script_name="UpdatedMultivariate"
+# I split the scripts so that we can launch them in parallel on four different A100 (if available)
+# I put in commentary the script that are not concerned bu the current job, then uncomment to launch them
 
-python -u run.py \
-    --is_training 1 \
-    --root_path ./dataset/traffic/ \
-    --data_path traffic.csv \
-    --evaluation_mode 'raw' \
-    --script_name $script_name \
-    --model $model_name \
-    --loss 'VARIFOLD' \
-    --number_of_kernels 2 \
-    --position_kernel_little 'Gaussian' \
-    --sigma_t_pos_little 1 \
-    --sigma_s_pos_little 14.7 \
-    --weight_little 0.5 \
-    --position_kernel_big 'Gaussian' \
-    --sigma_t_pos_big 2 \
-    --sigma_s_pos_big 29.4 \
-    --weight_big 0.5 \
-    --train_epochs 20 \
-    --patience 5 \
-    --data custom \
-    --features M \
-    --seq_len 96 \
-    --pred_len 96 \
-    --enc_in 862 \
-    --dec_in 862 \
-    --c_out 862 \
-    --factor 3 \
-    --e_layers 2 \
-    --d_model 512 \
-    --d_ff 512 \
-    --des 'Exp' \
-    --batch_size 32 \
-    --learning_rate 0.0001 \
-    --dropout 0.1 \
-    --itr 1
+# 1st split: DLinear and SegRNN
+# 2nd split: Some scripts of Autoformer
+# 3rd split: The rest of Autoformer + Some scripts for TimesNet
+# 4th split: The rest of TimesNet
 
-python -u run.py \
-    --is_training 1 \
-    --root_path ./dataset/traffic/ \
-    --data_path traffic.csv \
-    --evaluation_mode 'raw' \
-    --script_name $script_name \
-    --model $model_name \
-    --loss 'VARIFOLD' \
-    --number_of_kernels 2 \
-    --position_kernel_little 'Gaussian' \
-    --sigma_t_pos_little 1 \
-    --sigma_s_pos_little 14.7 \
-    --orientation_kernel_little 'Current' \
-    --sigma_t_or_little 1 \
-    --sigma_s_or_little 7.3 \
-    --weight_little 0.5 \
-    --position_kernel_big 'Gaussian' \
-    --sigma_t_pos_big 2 \
-    --sigma_s_pos_big 29.4 \
-    --orientation_kernel_big 'Current' \
-    --sigma_t_or_big 1 \
-    --sigma_s_or_big 14.7 \
-    --weight_big 0.5 \
-    --train_epochs 20 \
-    --patience 5 \
-    --data custom \
-    --features M \
-    --seq_len 96 \
-    --pred_len 96 \
-    --enc_in 862 \
-    --dec_in 862 \
-    --c_out 862 \
-    --factor 3 \
-    --e_layers 2 \
-    --d_model 512 \
-    --d_ff 512 \
-    --des 'Exp' \
-    --batch_size 32 \
-    --learning_rate 0.0001 \
-    --dropout 0.1 \
-    --itr 1
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.7 \
-#     --orientation_kernel_little 'UnorientedVarifold' \
-#     --sigma_t_or_little 1 \
-#     --sigma_s_or_little 14.7 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --orientation_kernel_big 'UnorientedVarifold' \
-#     --sigma_t_or_big 1 \
-#     --sigma_s_or_big 14.7 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 512 \
-#     --d_ff 512 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.1 \
-#     --orientation_kernel_little 'OrientedVarifold' \
-#     --sigma_t_or_little 1000 \
-#     --sigma_s_or_little 14.7 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --orientation_kernel_big 'OrientedVarifold' \
-#     --sigma_t_or_big 1000 \
-#     --sigma_s_or_big 29.4 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 512 \
-#     --d_ff 512 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
+# (I do like this due to the high computing time of Autoformer and TimesNet, but can adapt as needed)
 
 
-
-
-
-# # Choose the model
-# model_name=TimesNet
-
-# script_name="UpdatedMultivariate"
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.7 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 16 \
-#     --d_ff 32 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.7 \
-#     --orientation_kernel_little 'Current' \
-#     --sigma_t_or_little 1 \
-#     --sigma_s_or_little 7.3 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --orientation_kernel_big 'Current' \
-#     --sigma_t_or_big 1 \
-#     --sigma_s_or_big 14.7 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 16 \
-#     --d_ff 32 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.7 \
-#     --orientation_kernel_little 'UnorientedVarifold' \
-#     --sigma_t_or_little 1 \
-#     --sigma_s_or_little 14.7 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --orientation_kernel_big 'UnorientedVarifold' \
-#     --sigma_t_or_big 1 \
-#     --sigma_s_or_big 14.7 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 16 \
-#     --d_ff 32 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
-
-# python -u run.py \
-#     --is_training 1 \
-#     --root_path ./dataset/traffic/ \
-#     --data_path traffic.csv \
-#     --evaluation_mode 'raw' \
-#     --script_name $script_name \
-#     --model $model_name \
-#     --loss 'VARIFOLD' \
-#     --number_of_kernels 2 \
-#     --position_kernel_little 'Gaussian' \
-#     --sigma_t_pos_little 1 \
-#     --sigma_s_pos_little 14.1 \
-#     --orientation_kernel_little 'OrientedVarifold' \
-#     --sigma_t_or_little 1000 \
-#     --sigma_s_or_little 14.7 \
-#     --weight_little 0.5 \
-#     --position_kernel_big 'Gaussian' \
-#     --sigma_t_pos_big 2 \
-#     --sigma_s_pos_big 29.4 \
-#     --orientation_kernel_big 'OrientedVarifold' \
-#     --sigma_t_or_big 1000 \
-#     --sigma_s_or_big 29.4 \
-#     --weight_big 0.5 \
-#     --train_epochs 20 \
-#     --patience 5 \
-#     --data custom \
-#     --features M \
-#     --seq_len 96 \
-#     --pred_len 96 \
-#     --enc_in 862 \
-#     --dec_in 862 \
-#     --c_out 862 \
-#     --factor 3 \
-#     --e_layers 2 \
-#     --d_model 16 \
-#     --d_ff 32 \
-#     --des 'Exp' \
-#     --batch_size 32 \
-#     --learning_rate 0.0001 \
-#     --dropout 0.1 \
-#     --itr 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 1st split: DLinear and SegRNN
 
 # # Choose the model
 # model_name=SegRNN
@@ -679,6 +342,412 @@ python -u run.py \
 #     --learning_rate 0.0001 \
 #     --dropout 0.1 \
 #     --itr 1
+
+
+# 2nd split: Some scripts of Autoformer
+
+
+# # Choose the model
+# model_name=Autoformer
+
+# script_name="UpdatedMultivariate"
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 512 \
+#     --d_ff 512 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --orientation_kernel_little 'Current' \
+#     --sigma_t_or_little 1 \
+#     --sigma_s_or_little 7.3 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'Current' \
+#     --sigma_t_or_big 1 \
+#     --sigma_s_or_big 14.7 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 512 \
+#     --d_ff 512 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --orientation_kernel_little 'UnorientedVarifold' \
+#     --sigma_t_or_little 1 \
+#     --sigma_s_or_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'UnorientedVarifold' \
+#     --sigma_t_or_big 1 \
+#     --sigma_s_or_big 14.7 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 512 \
+#     --d_ff 512 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+
+# 3rd split: The rest of Autoformer + Some scripts for TimesNet
+
+# # Choose the model
+# model_name=Autoformer
+
+# script_name="UpdatedMultivariate"
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.1 \
+#     --orientation_kernel_little 'OrientedVarifold' \
+#     --sigma_t_or_little 1000 \
+#     --sigma_s_or_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'OrientedVarifold' \
+#     --sigma_t_or_big 1000 \
+#     --sigma_s_or_big 29.4 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 512 \
+#     --d_ff 512 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+
+# # Choose the model
+# model_name=TimesNet
+
+# script_name="UpdatedMultivariate"
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 16 \
+#     --d_ff 32 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --orientation_kernel_little 'Current' \
+#     --sigma_t_or_little 1 \
+#     --sigma_s_or_little 7.3 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'Current' \
+#     --sigma_t_or_big 1 \
+#     --sigma_s_or_big 14.7 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 16 \
+#     --d_ff 32 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+
+# 4th split: The rest of TimesNet
+
+# # Choose the model
+# model_name=TimesNet
+
+# script_name="UpdatedMultivariate"
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.7 \
+#     --orientation_kernel_little 'UnorientedVarifold' \
+#     --sigma_t_or_little 1 \
+#     --sigma_s_or_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'UnorientedVarifold' \
+#     --sigma_t_or_big 1 \
+#     --sigma_s_or_big 14.7 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 16 \
+#     --d_ff 32 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+# python -u run.py \
+#     --is_training 1 \
+#     --root_path ./dataset/traffic/ \
+#     --data_path traffic.csv \
+#     --evaluation_mode 'raw' \
+#     --script_name $script_name \
+#     --model $model_name \
+#     --loss 'VARIFOLD' \
+#     --number_of_kernels 2 \
+#     --position_kernel_little 'Gaussian' \
+#     --sigma_t_pos_little 1 \
+#     --sigma_s_pos_little 14.1 \
+#     --orientation_kernel_little 'OrientedVarifold' \
+#     --sigma_t_or_little 1000 \
+#     --sigma_s_or_little 14.7 \
+#     --weight_little 0.5 \
+#     --position_kernel_big 'Gaussian' \
+#     --sigma_t_pos_big 2 \
+#     --sigma_s_pos_big 29.4 \
+#     --orientation_kernel_big 'OrientedVarifold' \
+#     --sigma_t_or_big 1000 \
+#     --sigma_s_or_big 29.4 \
+#     --weight_big 0.5 \
+#     --train_epochs 20 \
+#     --patience 5 \
+#     --data custom \
+#     --features M \
+#     --seq_len 96 \
+#     --pred_len 96 \
+#     --enc_in 862 \
+#     --dec_in 862 \
+#     --c_out 862 \
+#     --factor 3 \
+#     --e_layers 2 \
+#     --d_model 16 \
+#     --d_ff 32 \
+#     --des 'Exp' \
+#     --batch_size 32 \
+#     --learning_rate 0.0001 \
+#     --dropout 0.1 \
+#     --itr 1
+
+
+# >>>>>>>>>>>>> END OF THE LAST SCRIPTS TO RUN <<<<<<<<<<<<
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
