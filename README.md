@@ -1,31 +1,16 @@
-# FlexForecast: A Flexible Deep Learning Time Series Forecasting framework
+# Varifold Loss: A Geometrical Approach to Loss Functions for Deep Learning Time Series Forecasting
+
 
 ## Overview
 
-This repository is the official PyTorch implementation of FlexForecast, a flexible deep learning framework for time series forecasting. It aims at providing an easy-to-use forecasting pipeline where datasets, models, or loss functions can be easily swapped, with a particular emphasis on the latter, which are central to this project.
+This repository is the official PyTorch implementation of the Varifold Loss, a shape-based loss function for training deep neural networks to perform time series forecasting. It aims at providing an easy-to-use pipeline where datasets, models, or loss functions can be easily swapped, with a particular emphasis on the latter, which are central to this project.
 
-[Read the associated paper/report](https://oatao.univ-toulouse.fr/28058/1/Lesouple_28058.pdf)    !! UPDATE THE LINK WHEN THE INTERNSHIP IS FINISHED
-
-
-## Citation
-
-If you find this repository useful for your research, please consider citing:
-
-```bibtex
-@inproceedings{Zeng2022AreTE,
-title={Are Transformers Effective for Time Series Forecasting?},
-author={Ailing Zeng and Muxi Chen and Lei Zhang and Qiang Xu},
-journal={Proceedings of the AAAI Conference on Artificial Intelligence},
-year={2023}
-}
-```
-
-!!! UPDATE ONCE MY WORK IS FINISHED
+This work is the result of my research internship for the MVA Master's program at ENS Paris-Saclay, within the Signal Processing team at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
 
 
 ## Contact
 
-If you have any questions or want to use the code, feel free to contact:
+If you have any questions or want to use the code, feel free to contact me:
 
 - Lucas Haubert ([lucas.haubert@ens-paris-saclay.fr](lucas.haubert@ens-paris-saclay.fr))
 
