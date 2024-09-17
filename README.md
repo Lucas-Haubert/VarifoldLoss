@@ -15,7 +15,7 @@ If you have any questions or want to use the code, feel free to contact me:
 - Lucas Haubert ([lucas.haubert@ens-paris-saclay.fr](lucas.haubert@ens-paris-saclay.fr))
 
 
-## Acknowledgements
+## Acknowledgement
 
 I would like to acknowledge [Laurent Oudre](http://www.laurentoudre.fr/) for being my tutor during my research internship at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
 
