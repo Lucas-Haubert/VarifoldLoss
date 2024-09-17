@@ -132,8 +132,9 @@ dmypy.json
 
 # Management of the folders
 dataset/
+slurm_scripts/
 outputs/
 slurm_outputs/
 new_outputs/
 new_slurm_outputs/
-slurm_scripts/
+
