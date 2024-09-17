@@ -8,6 +8,14 @@ This repository is the official PyTorch implementation of the Varifold Loss, a s
 This work is the result of my Master's Thesis for the MVA Master's program at the École Normale Supérieure Paris-Saclay, within the Signal Processing team at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
 
 
+## Usage
+
+1. Install PyTorch and necessary dependencies.
+
+   ```bash
+   pip install -r requirements.txt
+
+
 ## Contact
 
 If you have any questions or want to use the code, feel free to contact me:
