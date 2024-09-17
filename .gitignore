@@ -136,3 +136,4 @@ outputs/
 slurm_outputs/
 new_outputs/
 new_slurm_outputs/
+slurm_scripts/
