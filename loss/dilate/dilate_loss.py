@@ -1,8 +1,9 @@
 import torch
 
+# DILATE loss function: https://arxiv.org/abs/1909.09020
+
 import loss.dilate.soft_dtw as soft_dtw
 import loss.dilate.path_soft_dtw as path_soft_dtw
-
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -25,7 +26,6 @@ def DILATE(outputs, targets, alpha=0.5, gamma=0.01, device=device):
 	loss = alpha * loss_shape + (1 - alpha) * loss_temporal
 
 	return loss.cpu() # Similar to the output of nn.MSELoss()
-
 
 def DILATE_independent(outputs, targets, alpha=0.5, gamma=0.01, device=device):
     # outputs, targets: shape (B, H, C_in)

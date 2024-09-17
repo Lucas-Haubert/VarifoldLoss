@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-
+### Vanilla LSTM ###
 class Model(nn.Module):
 
     def __init__(self, configs):

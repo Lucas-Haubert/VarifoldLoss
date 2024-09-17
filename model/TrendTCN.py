@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from torch.nn.utils import weight_norm
 from layers.Autoformer_EncDec import series_decomp
 
+# Adaptation of the TCN model to include the trend decomposition (Autoformer)
+
 class Chomp1d(nn.Module):
     def __init__(self, chomp_size):
         super(Chomp1d, self).__init__()

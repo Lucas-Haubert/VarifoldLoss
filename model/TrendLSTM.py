@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from layers.Autoformer_EncDec import series_decomp
 
+# Adaptation of the LSTM model to include the trend decomposition (Autoformer)
+
 class Model(nn.Module):
 
     def __init__(self, configs):

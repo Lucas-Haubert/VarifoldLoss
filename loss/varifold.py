@@ -1,5 +1,7 @@
 import torch
 
+# The Varifold Loss, the main object of the projet: https://github.com/Lucas-Haubert/VarifoldLoss
+
 
 # Position kernels
 

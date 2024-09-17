@@ -1,6 +1,6 @@
 import os
 import torch
-from model import iTransformer, DLinear, TimesNet, SegRNN, Transformer, MLP, LSTM, CNN, TCN, Autoformer, TrendLSTM, TrendTCN
+from model import iTransformer, DLinear, TimesNet, SegRNN, Transformer, MLP, LSTM, TCN, Autoformer, TrendLSTM, TrendTCN
 
 
 class Exp_Basic(object):
@@ -15,7 +15,6 @@ class Exp_Basic(object):
             'Transformer': Transformer,
             'MLP': MLP,
             'LSTM': LSTM,
-            'CNN': CNN, 
             'TCN': TCN,
             'TrendLSTM': TrendLSTM,
             'TrendTCN': TrendTCN

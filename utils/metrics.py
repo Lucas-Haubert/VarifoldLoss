@@ -84,11 +84,13 @@ def fourier_spectra(series, frequency_range):
     mean_fourier_coefs = mean_fourier_coefs_axis_1.mean()
     return mean_fourier_coefs
 
+
 def rFFT(series_pred, series_ground, frequency_range):
     mean_fourier_coef_pred = fourier_spectra(series_pred, frequency_range)
     mean_fourier_coef_ground = fourier_spectra(series_ground, frequency_range)
     metric = (mean_fourier_coef_pred - mean_fourier_coef_ground) / mean_fourier_coef_ground
     return metric
+
 
 def calculate_spectral_entropy(series):
     N = len(series[1])
@@ -99,14 +101,13 @@ def calculate_spectral_entropy(series):
     mean_spectral_entropy = np.mean(spectral_entropy)
     return mean_spectral_entropy
 
+
 def rSE(series_pred, series_ground):
     spectral_entropy_pred = calculate_spectral_entropy(series_pred)
     spectral_entropy_ground = calculate_spectral_entropy(series_ground)
     metric = (spectral_entropy_pred - spectral_entropy_ground) / spectral_entropy_ground
     return metric
 
-
-# Compute the metrics
 
 def compute_metrics(pred, true, list_of_metrics):
     metrics = {}
@@ -123,26 +124,6 @@ def compute_metrics(pred, true, list_of_metrics):
     
     return metrics
 
-# Cette version permet de calculer les métriques depuis list_of_metrics directement, pas comme la version suivante
-
-# def compute_metrics(pred, true):
-    
-#     metrics = {
-#             'MSE': MSE(pred, true),
-#             'MAE': MAE(pred, true),
-#             'DTW': DTW(pred, true),
-#             'TDI': TDI(pred, true),
-#             'rFFT_low': rFFT(pred, true, frequency_range=(0, 0.02)),
-#             'rFFT_mid': rFFT(pred, true, frequency_range=(0.02, 0.15)),
-#             'rFFT_high': rFFT(pred, true, frequency_range=(0.15, 0.35)),
-#             'rSE': rSE(pred, true)
-#     }
-    
-#     return metrics
-
-
-
-# Mean, median and std for run.py
 
 def compute_mean_median_std_metrics(metrics_list):
     metric_names = metrics_list[0].keys()

@@ -1,5 +1,6 @@
 import torch
 
+# TILDE-Q Loss: https://arxiv.org/abs/2210.15050
 
 def amp_loss(outputs, targets):
     #outputs = B, T, 1 --> B, 1, T
