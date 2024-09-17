@@ -38,12 +38,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         self.vali_losses = []
         self.test_losses = []
 
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot001)', 'rFFT_(0dot005_0dot007)', 'rFFT_(0dot04_0dot06)', 'rFFT_(0dot37_0dot4)', 'rSE'] # Fractal_Config_1
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot01)', 'rFFT_(0dot01_0dot03)', 'rFFT_(0dot175_0dot225)', 'rSE'] # Fractal_Config_2
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot005)', 'rFFT_(0dot005_0dot1)', 'rFFT_(0dot1_0dot2)', 'rFFT_(0dot1_0dot5)', 'rSE'] # pour noise robustness
-        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0_0dot02)', 'rFFT_(0dot02_0dot2)', 'rFFT_(0dot2_0dot49)', 'rSE'] # pour noise robustness
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI'] # DILATE real-world sans freq
-        # self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'TDI', 'rFFT_(0_0dot05)', 'rFFT_(0dot05_0dot175)', 'rFFT_(0dot175_0dot225)', 'rFFT_(0dot175_0dot5)', 'rSE'] # Per_Sigmoid
+        self.list_of_metrics = ['MSE', 'MAE', 'DTW', 'rFFT_(0dot01_0dot03)', 'rFFT_(0dot175_0dot225)', 'rSE']
         self.metrics_for_plots_over_epochs = {metric: {'val': [], 'test': []} for metric in self.list_of_metrics}
 
         self.gains_test_loss = []
@@ -170,7 +165,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return total_loss, metrics_current_epoch
 
     def plot_losses_and_metrics(self, metric_name, setting):
-        folder_path = './new_outputs/losses_and_metrics_wrt_epochs/' + setting + '/'
+        folder_path = './outputs/losses_and_metrics_wrt_epochs/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -199,7 +194,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         plt.savefig(os.path.join(folder_path, f"Loss_{self.args.loss}_Metric_{metric_name}_over_epochs.png"))
 
     def plot_gains_wrt_epochs(self, metric_name, setting):
-        folder_path = './new_outputs/gains_wrt_epochs/' + setting + '/'
+        folder_path = './outputs/gains_wrt_epochs/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -218,7 +213,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
     def plot_batches_without_prediction(self, test_data, test_loader, dataset_name, setting):
 
-        folder_path = './new_outputs/dataset_visualization/' + dataset_name + '/' + setting + '/'
+        folder_path = './outputs/dataset_visualization/' + dataset_name + '/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -452,7 +447,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
         if test:
             print('loading model')
-            self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
         dataset_name = self.args.data_path.split('.')[0]
 
@@ -461,7 +456,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         preds = []
         trues = []
-        folder_path = './new_outputs/visual_results/' + setting + '/'
+        folder_path = './outputs/visual_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -510,8 +505,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 preds.append(pred)
                 trues.append(true)
-
-                # Très bon, mais je le change pour ce que je veux faire ensuite (à coder plus proprement)
 
                 if i == 0:
                     print('Plotting different forecasts')
@@ -665,7 +658,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
 
         # Result save
-        folder_path = './new_outputs/numerical_results/' + setting + '/'
+        folder_path = './outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -698,7 +691,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         vali_data, vali_loader = self._get_data(flag='val')
         if test:
             print('loading model')
-            self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
         preds = []
         trues = []
@@ -740,8 +733,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 batch_y = batch_y.detach().cpu().numpy()
                 if vali_data.scale and self.args.inverse:
                     shape = outputs.shape
-                    outputs = test_data.inverse_transform(outputs.squeeze(0)).reshape(shape)
-                    batch_y = test_data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
+                    outputs = vali_data.inverse_transform(outputs.squeeze(0)).reshape(shape)
+                    batch_y = vali_data.inverse_transform(batch_y.squeeze(0)).reshape(shape)
 
                 pred = outputs
                 true = batch_y
@@ -757,7 +750,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
 
         # result save
-        folder_path = './new_outputs/numerical_results/test_on_vali' + setting + '/'
+        folder_path = './outputs/numerical_results/test_on_vali' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -796,12 +789,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         if test:
             print('loading model')
-            self.model.load_state_dict(torch.load(os.path.join('./new_outputs/checkpoints/' + setting, 'checkpoint.pth')))
+            self.model.load_state_dict(torch.load(os.path.join('./outputs/checkpoints/' + setting, 'checkpoint.pth')))
 
         preds = []
         trues = []
 
-        folder_path = './new_outputs/visual_results/' + setting + '/'
+        folder_path = './outputs/visual_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -1003,7 +996,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
 
-        folder_path = './new_outputs/numerical_results/' + setting + '/'
+        folder_path = './outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -1069,7 +1062,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
         # result save
-        folder_path = './new_outputs/numerical_results/' + setting + '/'
+        folder_path = './outputs/numerical_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
