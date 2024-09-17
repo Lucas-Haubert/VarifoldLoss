@@ -17,10 +17,17 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 2. Download the data from [Google Drive](https://drive.google.com/drive/folders/1OPz3pVgydOBUcxl9U0tVTTiScj12IQNc?usp=drive_link) and store them in the folder `./dataset`.
 
+3. Train and evaluate the models on the different losses. The following are examples of scripts to reproduce the experiments of the thesis.
+
+   ```bash
+   pip install -r requirements.txt
+
+   pip install blabla
+
 
 ## Contact
 
-If you have any questions or want to use the code, feel free to contact me:
+If you have any questions or want to use the code, feel free to contact:
 
 - Lucas Haubert ([lucas.haubert@ens-paris-saclay.fr](lucas.haubert@ens-paris-saclay.fr))
 
