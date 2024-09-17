@@ -10,10 +10,12 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 ## Usage
 
-1. Install PyTorch and necessary dependencies.
+1. Install PyTorch and the necessary dependencies.
 
    ```bash
    pip install -r requirements.txt
+
+2. Download the data from [Google Drive](https://drive.google.com/drive/folders/1OPz3pVgydOBUcxl9U0tVTTiScj12IQNc?usp=drive_link).
 
 
 ## Contact
