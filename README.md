@@ -1,4 +1,4 @@
-# Varifold Loss: A Geometrical Approach to Loss Functions for Deep Learning Time Series Forecasting
+# The Varifold Loss: A Geometrical Approach to Loss Functions for Deep Learning Time Series Forecasting
 
 
 ## Overview
