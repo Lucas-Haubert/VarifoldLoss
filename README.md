@@ -17,9 +17,9 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 2. Download the data from [Google Drive](https://drive.google.com/drive/folders/1OPz3pVgydOBUcxl9U0tVTTiScj12IQNc?usp=drive_link) and store them in the folder `./dataset`.
 
-3. Train and evaluate the models on the different losses. The following are examples of scripts to reproduce the experiments of the thesis.
+3. Train and evaluate the models with the different loss functions. The following scripts are examples of commands to reproduce the experiments of the thesis.
 
-   ```bash
+   ```
    # Noise sensitivity without trend
    bash ./scripts/Simple_SNR/MLP.sh
 
@@ -37,9 +37,7 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
    # Real-world multivariate
    bash ./scripts/real_world_multivariate/ETTh1/DLinear.sh
-
-   
-
+   ```
 
 ## Contact
 
