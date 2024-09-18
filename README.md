@@ -20,9 +20,25 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 3. Train and evaluate the models on the different losses. The following are examples of scripts to reproduce the experiments of the thesis.
 
    ```bash
-   pip install -r requirements.txt
+   # Noise sensitivity without trend
+   bash ./scripts/Simple_SNR/MLP.sh
 
-   pip install blabla
+   # Noise sensitivity with trend
+   bash ./scripts/Trend_SNR/DLinear.sh
+
+   # Heatmap
+   bash ./scripts/Fractal_2/MLP.sh
+
+   # Multi-scale strategy
+   bash ./scripts/Multi_Scale/DLinear.sh
+
+   # Real-world univariate
+   bash ./scripts/real_world_univariate/ETTh1/DLinear.sh
+
+   # Real-world multivariate
+   bash ./scripts/real_world_multivariate/ETTh1/DLinear.sh
+
+   
 
 
 ## Contact
