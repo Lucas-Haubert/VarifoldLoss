@@ -8,6 +8,13 @@ This repository is the official PyTorch implementation of the Varifold Loss, a s
 This work is the result of my Master's Thesis for the MVA Master's program at the École Normale Supérieure Paris-Saclay, within the Signal Processing team at the [Centre Borelli](https://centreborelli.ens-paris-saclay.fr/en).
 
 
+## The Varifold Loss
+
+Traditional forecasting approaches, including autoregressive methods or state space models, rely on strong assumptions about the nature of the series. However, these models often lack of performance as the complexity of time series datasets increases, which motivated the use of deep learning approaches.
+
+Often neglected, the design of the loss function is a crucial step in training a deep neural network. Indeed, the loss function should accurately encode the prediction problem, and a poorly designed loss could lead to irrelevant predictions. In forecasting, deep neural networks are commonly trained with the Mean Squared Error (MSE) or one of its variants.
+
+
 ## Usage
 
 1. Install PyTorch and the necessary dependencies.
