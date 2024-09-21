@@ -41,7 +41,7 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 ## Source
 
-The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the structure of the repository, is inspired from the "Times Series Library":
+The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the structure of the repository, is inspired by the "Time Series Library":
 
 ```
 @article{wang2024tssurvey,
