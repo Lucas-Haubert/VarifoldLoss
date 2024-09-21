@@ -31,7 +31,7 @@ Often neglected, the design of the loss function is a crucial step in training a
    # Noise sensitivity with trend
    bash ./scripts/Trend_SNR/DLinear.sh
 
-   # Heatmap
+   # Heatmaps
    bash ./scripts/Fractal_2/MLP.sh
 
    # Multi-scale strategy
