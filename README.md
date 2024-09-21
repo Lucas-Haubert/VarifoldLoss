@@ -10,9 +10,9 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 ## The Varifold Loss
 
-Often neglected, the design of the loss function is a crucial step in training a deep neural network for time series forecasting. The Mean Squarred Error (MSE) is the most widely used optimization metric, by convention. Yet, this approach is limiting when attempting to effectively capture the information from the signal in terms of shape fidelity and frequency fidelity.
+Often neglected, the design of the loss function is a crucial step in training a deep neural network for time series forecasting. The Mean Squarred Error (MSE) is the most widely used optimization metric, by convention. Yet, this approach is limiting when attempting to effectively capture the information from the signal in terms of shape fidelity and frequency fidelity. In this Master's Thesis, I give the construction of the so-called Varifold Loss which paves the way for a new paradigm in the design of loss functions based on shape spaces and kernel methods.
 
-In this Master's Thesis, I give the construction of the so-called Varifold Loss which paves the way for a new paradigm in the design of loss functions based on shape spaces and kernel methods.
+If $\mathbb{R}^2$ blabla, then
 
 
 ## Usage
