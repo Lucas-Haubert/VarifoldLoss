@@ -12,8 +12,10 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
 
 Often neglected, the design of the loss function is a crucial step in training a deep neural network for time series forecasting. The Mean Squarred Error (MSE) is the most widely used optimization metric, by convention. Yet, this approach is limiting when attempting to effectively capture the information from the signal in terms of shape fidelity and frequency fidelity. In this Master's Thesis, I give the construction of the so-called Varifold Loss which paves the way for a new paradigm in the design of loss functions based on shape spaces and kernel methods.
 
-If $\mathbb{R}^2$ blabla, then
+A univariate time series $X$ can be described by a point cloud $(i, x_i), \, i \in \{ 1, ..., H \}$. To each segment $((i, x_i), (i+1, x_{i+1}))$, we define some center $(\frac{i + (i+1)}{2}, \frac{x_i + x_i(i+1)}{2}) = (\frac{i + (i+1)}{2}, \tilde{x}_i)$, volume $r_i^X$ and tangent vector $\vec{t}_i^X$ to represent the series. Then, for some $k_{pos}$, $k_{or}$ customizable kernels, the measure of similarity between $X$ and $Y$ is given by the following product:
 
+$\langle \tilde{\mu}_X, \tilde{\mu}_Y \rangle= \sum_{i=1}^{H-1} \sum_{j=1}^{H-1} k_{\text{pos}}((i, \tilde{x}_i), (j, \tilde{y}_j)) k_{\text{or}}(\overrightarrow{t}_i^X, \overrightarrow{t}_j^Y) r_i^X r_j^Y
+$
 
 ## Usage
 
