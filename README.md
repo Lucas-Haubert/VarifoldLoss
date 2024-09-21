@@ -39,6 +39,20 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
    bash ./scripts/real_world_multivariate/ETTh1/DLinear.sh
    ```
 
+## Source
+
+The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the structure of the repository, is inspired from the "Times Series Library":
+
+```
+@article{wang2024tssurvey,
+  title={Deep Time Series Models: A Comprehensive Survey and Benchmark},
+  author={Yuxuan Wang and Haixu Wu and Jiaxiang Dong and Yong Liu and Mingsheng Long and Jianmin Wang},
+  booktitle={arXiv preprint arXiv:2407.13278},
+  year={2024},
+}
+```
+
+
 ## Contact
 
 If you have any questions or want to use the code, feel free to contact:
