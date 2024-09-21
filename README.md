@@ -39,7 +39,7 @@ This work is the result of my Master's Thesis for the MVA Master's program at th
    bash ./scripts/real_world_multivariate/ETTh1/DLinear.sh
    ```
 
-## Source
+## Sources
 
 The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the structure of the repository, is inspired by the "Time Series Library":
 
@@ -49,6 +49,30 @@ The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the 
   author={Yuxuan Wang and Haixu Wu and Jiaxiang Dong and Yong Liu and Mingsheng Long and Jianmin Wang},
   booktitle={arXiv preprint arXiv:2407.13278},
   year={2024},
+}
+```
+
+The first alternative loss function to MSE, DILATE, was developed by V. Le Guen and N. Thome:
+
+```
+@article{le2019shape,
+  title={Shape and time distortion loss for training deep time series forecasting models},
+  author={Le Guen, Vincent and Thome, Nicolas},
+  journal={Advances in neural information processing systems},
+  volume={32},
+  year={2019}
+}
+```
+
+The mathematical construction of oriented varifolds as a tool for curve comparison was introduced by I. Kaltenmark, B. Charlier, and N. Charon:
+
+```
+@inproceedings{kaltenmark2017general,
+  title={A general framework for curve and surface comparison and registration with oriented varifolds},
+  author={Kaltenmark, Irene and Charlier, Benjamin and Charon, Nicolas},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={3346--3355},
+  year={2017}
 }
 ```
 
