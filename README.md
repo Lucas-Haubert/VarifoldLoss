@@ -46,7 +46,7 @@ Often neglected, the design of the loss function is a crucial step in training a
 
 ## Sources
 
-The code for the models (Autoformer, DLinear, SegRNN, TimesNet), as well as the structure of the repository, is inspired by the "Time Series Library":
+The code for the models (Autoformer, DLinear, SegRNN, TimesNet) comes from the "Time Series Library":
 
 ```
 @article{wang2024tssurvey,
